@@ -46,8 +46,7 @@ df["day_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 ts_edmonton = TimeSeries.from_dataframe(
   df,
   time_col = "LOCAL_DATE",
-  value_cols = ["MEAN_TEMPERATURE_EDMONTON", "TOTAL_PRECIPITATION_EDMONTON", 
-  'month_sin', 'month_cos', 'week_sin', 'week_cos', 'day_sin', 'day_cos'],
+  value_cols = ["MEAN_TEMPERATURE_EDMONTON", "TOTAL_PRECIPITATION_EDMONTON"],
   fill_missing_dates = True
 )
 ts_edmonton = ts_edmonton.drop_before(pd.Timestamp("1960-12-31"))
@@ -55,8 +54,17 @@ ts_edmonton = ts_edmonton.drop_before(pd.Timestamp("1960-12-31"))
 ts_ottawa = TimeSeries.from_dataframe(
   df,
   time_col = "LOCAL_DATE",
-  value_cols = ["MEAN_TEMPERATURE_OTTAWA", "TOTAL_PRECIPITATION_OTTAWA", 
-  'month_sin', 'month_cos', 'week_sin', 'week_cos', 'day_sin', 'day_cos'],
+  value_cols = ["MEAN_TEMPERATURE_OTTAWA", "TOTAL_PRECIPITATION_OTTAWA"],
+  fill_missing_dates = True
+)
+
+
+# Retrieve date covariates
+ts_covars = TimeSeries.from_dataframe(
+  df,
+  time_col = "LOCAL_DATE",
+  value_cols = ['month_sin', 'month_cos', 'week_sin', 'week_cos', 'day_sin', 
+  'day_cos'],
   fill_missing_dates = True
 )
 

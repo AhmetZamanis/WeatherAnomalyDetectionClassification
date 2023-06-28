@@ -26,8 +26,8 @@ plt.close("all")
 
 # Perform DTW, plot cost matrix
 alignment = dtw.dtw(
-  ts_edmonton[["MEAN_TEMPERATURE_EDMONTON", "TOTAL_PRECIPITATION_EDMONTON"]], 
-  ts_ottawa[["MEAN_TEMPERATURE_OTTAWA", "TOTAL_PRECIPITATION_OTTAWA"]],
+  ts_edmonton, 
+  ts_ottawa,
   window = dtw.Itakura(max_slope = 2) # 1.5 is fast & narrow, 3 is slow & wide
   )
 alignment.plot()

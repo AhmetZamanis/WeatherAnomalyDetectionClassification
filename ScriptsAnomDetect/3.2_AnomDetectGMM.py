@@ -1,4 +1,4 @@
-# Canadian weather data - TS anomaly detection with clustering algorithms
+# Canadian weather data - TS anomaly detection with Gaussian Mixture Model
 # Data source: https://openml.org/search?type=data&status=active&id=43843
 
 exec(open("./ScriptsAnomDetect/1_DataPrep.py").read())
@@ -6,7 +6,8 @@ exec(open("./ScriptsAnomDetect/1_DataPrep.py").read())
 
 from sklearn.preprocessing import MinMaxScaler
 from darts.dataprocessing.transformers.scaler import Scaler
-from darts.ad.scorers.kmeans_scorer import KMeansScorer
+from pyod.models.gmm import GMM
+from darts.ad.scorers.pyod_scorer import PyODScorer
 from darts.ad.detectors.quantile_detector import QuantileDetector
 
 
@@ -25,11 +26,17 @@ ts_train = scaler.fit_transform(ts_train)
 ts_test = scaler.transform(ts_test)
 
 
-# Fit K-means scorer on train set
-scorer_kmeans = KMeansScorer(window = 1, k = 12, random_state = 1923)
-_ = scorer_kmeans.fit(ts_train)
-scores_train = scorer_kmeans.score(ts_train)
-scores_test = scorer_kmeans.score(ts_test)
+# Fit GMM scorer on train set
+model_gmm = GMM(
+  n_components = 4, # N. of Gaussian mixture components
+  n_init = 10, # N. of initializations for expectation maximization
+  contamination = 0.01, # % of expected anomalies in the dataset
+  random_state = 1923
+)
+scorer_gmm = PyODScorer(model = model_gmm, window = 1)
+_ = scorer_gmm.fit(ts_train)
+scores_train = scorer_gmm.score(ts_train)
+scores_test = scorer_gmm.score(ts_test)
 scores = scores_train.append(scores_test)
 
 
@@ -39,7 +46,7 @@ fig, ax = plt.subplots(3, sharex = True)
 # Anomaly scores
 scores_train.plot(ax = ax[0])
 scores_test.plot(ax = ax[0])
-_ = ax[0].set_title("Anomaly scores, K-Means")
+_ = ax[0].set_title("Anomaly scores, Gaussian Mixture Model")
 # _ = ax[0].set_ylim(0)
 
 # MeanTemp
@@ -61,26 +68,9 @@ df_scores = scores_train.pd_dataframe().rename({"0": "Train"}, axis = 1)
 df_scores["Test"] = scores_test.values()[0:-1]
 df_scores = df_scores.melt(var_name = "Set", value_name = "Anomaly scores")
 _ = sns.kdeplot(data = df_scores, x = "Anomaly scores", hue = "Set")
-_ = plt.title("Distributions of K-Means anomaly scores")
+_ = plt.title("Distributions of GMM anomaly scores")
 plt.show()
 plt.close("all")
-
-
-# Clustering plot
-train_labels = scorer_kmeans.model.labels_.astype(str)
-fig = px.scatter_3d(
-  x = ts_train['MEAN_TEMPERATURE_OTTAWA'].univariate_values(),
-  y = ts_train['TOTAL_PRECIPITATION_OTTAWA'].univariate_values(),
-  z = ts_train.time_index.month,
-  color = train_labels,
-  title = "K-Means clustering, Ottawa pre-1980",
-  labels = {
-    "x": "Mean temperature",
-    "y": "Total precipitation",
-    "z": "Month",
-    "color": "Clusters"}
-)
-fig.show()
 
 
 # Quantile anomaly detection
@@ -95,7 +85,7 @@ anoms = anoms_train.append(anoms_test)
 # positive and negative observations
 df_positive = pd.DataFrame({
   "Date": ts_ottawa.time_index,
-  "K-Means score": np.where(
+  "GMM score": np.where(
     anoms.univariate_values() == 1, 
     scores.univariate_values(), np.nan),
   "Mean temperature": np.where(
@@ -109,7 +99,7 @@ df_positive = pd.DataFrame({
 
 df_negative = pd.DataFrame({
   "Date": ts_ottawa.time_index,
-  "K-Means score": np.where(
+  "GMM score": np.where(
     anoms.univariate_values() == 0, 
     scores.univariate_values(), np.nan),
   "Mean temperature": np.where(
@@ -124,10 +114,10 @@ df_negative = pd.DataFrame({
 
 # Plot original series, colored by anomalous & non-anomalous
 fig, ax = plt.subplots(3, sharex = True)
-_ = fig.suptitle("Anomaly detections with 99th percentile K-Means scores\nBlue = Anomalous days")
+_ = fig.suptitle("Anomaly detections with 99th percentile GMM scores\nBlue = Anomalous days")
 
-_ = sns.lineplot(data = df_negative,  x = "Date",  y = "K-Means score", ax = ax[0])
-_ = sns.lineplot(data = df_positive,  x = "Date",  y = "K-Means score", ax = ax[0])
+_ = sns.lineplot(data = df_negative,  x = "Date",  y = "GMM score", ax = ax[0])
+_ = sns.lineplot(data = df_positive,  x = "Date",  y = "GMM score", ax = ax[0])
 
 _ = sns.lineplot(data = df_negative,  x = "Date",  y = "Mean temperature", ax = ax[1])
 _ = sns.lineplot(data = df_positive,  x = "Date",  y = "Mean temperature", ax = ax[1])
@@ -140,16 +130,17 @@ plt.close("all")
 
 
 # 3D anomalies plot
+train_labels = scorer_gmm.model.labels_.astype(str)
 fig = px.scatter_3d(
   x = ts_train['MEAN_TEMPERATURE_OTTAWA'].univariate_values(),
   y = ts_train['TOTAL_PRECIPITATION_OTTAWA'].univariate_values(),
   z = ts_train.time_index.month,
-  color = anoms_train.univariate_values().astype(str),
-  title = "K-Means anomaly flags, Ottawa pre-1980",
+  color = train_labels,
+  title = "GMM anomaly labeling, Ottawa pre-1980",
   labels = {
     "x": "Mean temperature",
     "y": "Total precipitation",
     "z": "Month",
-    "color": "Anomaly flags"}
+    "color": "Anomaly flag"}
 )
 fig.show()

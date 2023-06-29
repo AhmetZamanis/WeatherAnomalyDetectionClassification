@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
 import arff
 from darts.timeseries import TimeSeries
 from darts.dataprocessing.transformers.missing_values_filler import MissingValuesFiller

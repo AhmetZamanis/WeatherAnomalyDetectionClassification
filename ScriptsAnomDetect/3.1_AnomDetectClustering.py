@@ -26,7 +26,7 @@ ts_test = scaler.transform(ts_test)
 
 
 # Fit K-means scorer on train set
-scorer_kmeans = KMeansScorer(window = 30, k = 12, random_state = 1923)
+scorer_kmeans = KMeansScorer(window = 1, k = 12, random_state = 1923)
 _ = scorer_kmeans.fit(ts_train)
 scores_train = scorer_kmeans.score(ts_train)
 scores_test = scorer_kmeans.score(ts_test)
@@ -63,4 +63,21 @@ _ = sns.kdeplot(data = df_scores, x = "Anomaly scores", hue = "Set")
 _ = plt.title("Distributions of K-Means anomaly scores")
 plt.show()
 plt.close("all")
+
+
+# Clustering plot
+train_labels = scorer_kmeans.model.labels_.astype(str)
+fig = px.scatter_3d(
+  x = ts_train['MEAN_TEMPERATURE_OTTAWA'].univariate_values(),
+  y = ts_train['TOTAL_PRECIPITATION_OTTAWA'].univariate_values(),
+  z = ts_train.time_index.month,
+  color = train_labels,
+  title = "K-Means clustering, Ottawa pre-1980",
+  labels = {
+    "x": "Mean temperature",
+    "y": "Total precipitation",
+    "z": "Month",
+    "color": "Clusters"}
+)
+fig.show()
 

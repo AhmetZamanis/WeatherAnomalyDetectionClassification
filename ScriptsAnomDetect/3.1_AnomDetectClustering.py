@@ -141,11 +141,11 @@ plt.close("all")
 
 # 3D anomalies plot
 fig = px.scatter_3d(
-  x = ts_train['MEAN_TEMPERATURE_OTTAWA'].univariate_values(),
-  y = ts_train['TOTAL_PRECIPITATION_OTTAWA'].univariate_values(),
-  z = ts_train.time_index.month,
-  color = anoms_train.univariate_values().astype(str),
-  title = "K-Means anomaly flags, Ottawa pre-1980",
+  x = ts_ottawa['MEAN_TEMPERATURE_OTTAWA'].univariate_values(),
+  y = ts_ottawa['TOTAL_PRECIPITATION_OTTAWA'].univariate_values(),
+  z = ts_ottawa.time_index.month,
+  color = anoms.univariate_values().astype(str),
+  title = "K-Means anomaly flags",
   labels = {
     "x": "Mean temperature",
     "y": "Total precipitation",

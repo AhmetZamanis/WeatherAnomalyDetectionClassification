@@ -1,42 +1,27 @@
 # Canadian weather data - TS anomaly detection with Isolation Forest model
 # Data source: https://openml.org/search?type=data&status=active&id=43843
 
-exec(open("./ScriptsAnomDetect/1_DataPrep.py").read())
+exec(open("./ScriptsAnomDetect/3.0_AnomDetectPrep.py").read())
 
 
-# from sklearn.preprocessing import MinMaxScaler
-# from darts.dataprocessing.transformers.scaler import Scaler
 from pyod.models.iforest import IForest
-from darts.ad.scorers.pyod_scorer import PyODScorer
-from darts.ad.detectors.quantile_detector import QuantileDetector
 
 
-# Concatenate time covariates to Ottawa temperature series
-ts_ottawa = ts_ottawa.concatenate(ts_covars, axis = 1)
-
-
-# Split train-test: Before vs. after 1980
-ts_train = ts_ottawa.drop_after(pd.Timestamp("1980-01-01"))
-ts_test = ts_ottawa.drop_before(pd.Timestamp("1979-12-31"))
-
-
-# # Scale series between -1 and 1
-# scaler = Scaler(MinMaxScaler(feature_range = (-1, 1)))
-# ts_train = scaler.fit_transform(ts_train)
-# ts_test = scaler.transform(ts_test)
-
-
-# Fit IForest scorer on train set
-model_forest = IForest(
+# Create IForest scorer
+iforest = IForest(
   n_estimators= 500,
   contamination = 0.01,
   random_state = 1923
   )
-scorer_forest = PyODScorer(model = model_forest, window = 1)
-_ = scorer_forest.fit(ts_train)
-scores_train = scorer_forest.score(ts_train)
-scores_test = scorer_forest.score(ts_test)
-scores = scores_train.append(scores_test)
+scorer = PyODScorer(model = iforest, window = 1)
+
+
+# Perform anomaly scoring
+scores_train, scores_test, scores = score(ts_train, ts_test, scorer)
+
+
+# Perform anomaly detection
+anoms_train, anoms_test, anoms = detect(scores_train, scores_test, detector)
 
 
 # Plot anomaly scores
@@ -70,14 +55,6 @@ _ = sns.kdeplot(data = df_scores, x = "Anomaly scores", hue = "Set")
 _ = plt.title("Distributions of IForest anomaly scores")
 plt.show()
 plt.close("all")
-
-
-# Quantile anomaly detection
-detector = QuantileDetector(high_quantile = 0.99)
-_ = detector.fit(scores_train)
-anoms_train = detector.detect(scores_train)
-anoms_test = detector.detect(scores_test)
-anoms = anoms_train.append(anoms_test)
 
 
 # Retrieve dates, variables and anomaly labels in dataframes, separately for
@@ -149,7 +126,7 @@ fig.show()
 # Feature importances (can be misleading for high cardinality features, i.e. day
 # and week features)
 feat_imp = pd.DataFrame({
-  "Feature importance": scorer_forest.model.feature_importances_,
+  "Feature importance": scorer.model.feature_importances_,
   "Feature": ts_ottawa.components
 }).sort_values("Feature importance", ascending = False)
 _ = sns.barplot(data = feat_imp, x = "Feature importance", y = "Feature")

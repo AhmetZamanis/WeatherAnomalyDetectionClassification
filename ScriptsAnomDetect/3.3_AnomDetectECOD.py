@@ -1,38 +1,23 @@
 # Canadian weather data - TS anomaly detection with ECOD model
 # Data source: https://openml.org/search?type=data&status=active&id=43843
 
-exec(open("./ScriptsAnomDetect/1_DataPrep.py").read())
+exec(open("./ScriptsAnomDetect/3.0_AnomDetectPrep.py").read())
 
 
-# from sklearn.preprocessing import MinMaxScaler
-# from darts.dataprocessing.transformers.scaler import Scaler
 from pyod.models.ecod import ECOD
-from darts.ad.scorers.pyod_scorer import PyODScorer
-from darts.ad.detectors.quantile_detector import QuantileDetector
 
 
-# Concatenate time covariates to Ottawa temperature series
-ts_ottawa = ts_ottawa.concatenate(ts_covars, axis = 1)
+# Create ECOD scorer
+ecod = ECOD(contamination = 0.01)
+scorer = PyODScorer(model = ecod, window = 1)
 
 
-# Split train-test: Before vs. after 1980
-ts_train = ts_ottawa.drop_after(pd.Timestamp("1980-01-01"))
-ts_test = ts_ottawa.drop_before(pd.Timestamp("1979-12-31"))
+# Perform anomaly scoring
+scores_train, scores_test, scores = score(ts_train, ts_test, scorer)
 
 
-# # Scale series between -1 and 1
-# scaler = Scaler(MinMaxScaler(feature_range = (-1, 1)))
-# ts_train = scaler.fit_transform(ts_train)
-# ts_test = scaler.transform(ts_test)
-
-
-# Fit ECOD scorer on train set
-model_ecod = ECOD(contamination = 0.01)
-scorer_ecod = PyODScorer(model = model_ecod, window = 1)
-_ = scorer_ecod.fit(ts_train)
-scores_train = scorer_ecod.score(ts_train)
-scores_test = scorer_ecod.score(ts_test)
-scores = scores_train.append(scores_test)
+# Perform anomaly detection
+anoms_train, anoms_test, anoms = detect(scores_train, scores_test, detector)
 
 
 # Plot anomaly scores
@@ -66,14 +51,6 @@ _ = sns.kdeplot(data = df_scores, x = "Anomaly scores", hue = "Set")
 _ = plt.title("Distributions of ECOD anomaly scores")
 plt.show()
 plt.close("all")
-
-
-# Quantile anomaly detection
-detector = QuantileDetector(high_quantile = 0.99)
-_ = detector.fit(scores_train)
-anoms_train = detector.detect(scores_train)
-anoms_test = detector.detect(scores_test)
-anoms = anoms_train.append(anoms_test)
 
 
 # Retrieve dates, variables and anomaly labels in dataframes, separately for
@@ -145,7 +122,7 @@ fig.show()
 
 # Explaining as single training point's outlier scoring
 idx_max_precip = np.argmax(ts_train['TOTAL_PRECIPITATION_OTTAWA'].univariate_values())
-scorer_ecod.model.explain_outlier(
+scorer.model.explain_outlier(
   ind = idx_max_precip, # Index of point to explain
   columns = [1, 2, 3, 4], # Dimensions to explain (variables + month cyclical)
   feature_names = ["MeanTemp", "TotalPrecip", "MonthSin", "MonthCos"]

@@ -1,55 +1,32 @@
 # Canadian weather data - TS anomaly detection with PCA
 # Data source: https://openml.org/search?type=data&status=active&id=43843
 
-exec(open("./ScriptsAnomDetect/1_DataPrep.py").read())
+exec(open("./ScriptsAnomDetect/3.0_AnomDetectPrep.py").read())
 
 
-from sklearn.preprocessing import MinMaxScaler
-from darts.dataprocessing.transformers.scaler import Scaler
 from pyod.models.pca import PCA
-from darts.ad.scorers.pyod_scorer import PyODScorer
-from darts.ad.detectors.quantile_detector import QuantileDetector
 
 
-# Concatenate time covariates to Ottawa temperature series
-ts_ottawa = ts_ottawa.concatenate(ts_covars, axis = 1)
+# Create PCA scorer
+pca = PCA(contamination = 0.01, standardization = True, random_state = 1923)
+scorer= PyODScorer(model = pca, window = 1)
 
 
-# Split train-test: Before vs. after 1980
-ts_train = ts_ottawa.drop_after(pd.Timestamp("1980-01-01"))
-ts_test = ts_ottawa.drop_before(pd.Timestamp("1979-12-31"))
+# Perform anomaly scoring
+scores_train, scores_test, scores = score(ts_train, ts_test, scorer)
 
 
-# # Scale series between -1 and 1
-# scaler = Scaler(MinMaxScaler(feature_range = (-1, 1)))
-# ts_train = scaler.fit_transform(ts_train)
-# ts_test = scaler.transform(ts_test)
-
-
-# Fit PCA scorer on train set
-model_pca = PCA(contamination = 0.01, standardization = True, random_state = 1923)
-scorer_pca = PyODScorer(model = model_pca, window = 1)
-_ = scorer_pca.fit(ts_train)
-scores_train = scorer_pca.score(ts_train)
-scores_test = scorer_pca.score(ts_test)
-scores = scores_train.append(scores_test)
-
-
-# Quantile anomaly detection
-detector = QuantileDetector(high_quantile = 0.99)
-_ = detector.fit(scores_train)
-anoms_train = detector.detect(scores_train)
-anoms_test = detector.detect(scores_test)
-anoms = anoms_train.append(anoms_test)
+# Perform anomaly detection
+anoms_train, anoms_test, anoms = detect(scores_train, scores_test, detector)
 
 
 # Variances explained by each component: First 3 PCs explain almost 99%
-pc_variances = scorer_pca.model.explained_variance_ratio_ * 100
+pc_variances = scorer.model.explained_variance_ratio_ * 100
 pc_variances = [round(x, 2) for x in pc_variances]
 
 # Heatplot of PC loadings, X = PCs, Y = Features's contribution to the PCs
 pc_loadings = pd.DataFrame(
-  scorer_pca.model.components_.T,
+  scorer.model.components_.T,
   columns = pc_variances,
   index = ts_ottawa.components
 )

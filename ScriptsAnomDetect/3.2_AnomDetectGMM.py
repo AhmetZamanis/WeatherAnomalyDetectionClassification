@@ -42,3 +42,21 @@ plot_anom3d(scorer_name, ts_ottawa, anoms)
 
 # Detections plot
 plot_detection("GMM scores", q, ts_ottawa, scores, anoms)
+
+
+# 3D cluster plots
+labels = scorer.model.detector_.predict(scaler.transform(ts_ottawa).values()).astype(str)
+fig = px.scatter_3d(
+  x = ts_ottawa['MEAN_TEMPERATURE_OTTAWA'].univariate_values(),
+  y = ts_ottawa['TOTAL_PRECIPITATION_OTTAWA'].univariate_values(),
+  z = ts_ottawa.time_index.month,
+  color = labels,
+  title = "GMM clustering plot",
+  labels = {
+    "x": "Mean temperature",
+    "y": "Total precipitation",
+    "z": "Month",
+    "color": "Clusters"}
+)
+fig.show()
+# The clustering identifies the seasons & months correctly.

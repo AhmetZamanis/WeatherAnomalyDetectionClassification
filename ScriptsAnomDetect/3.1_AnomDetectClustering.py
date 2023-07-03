@@ -38,7 +38,7 @@ plot_anom3d(scorer_name, ts_ottawa, anoms)
 plot_detection("K-means scores", q, ts_ottawa, scores, anoms)
 
 
-# Special to scorer: Clustering plot
+# Clustering plot
 train_labels = scorer.model.labels_.astype(str)
 fig = px.scatter_3d(
   x = ts_train['MEAN_TEMPERATURE_OTTAWA'].univariate_values(),

@@ -11,6 +11,7 @@ from darts.ad.scorers.kmeans_scorer import KMeansScorer
 
 # Create K-means scorer
 scorer = KMeansScorer(window = 1, k = 12, random_state = 1923)
+scorer_name = "K-means scorer"
 
 
 # Perform anomaly scoring
@@ -22,15 +23,15 @@ anoms_train, anoms_test, anoms = detect(scores_train, scores_test, detector)
 
 
 # Plot scores & original series
-plot_series("K-means scorer", ts_train, ts_test, scores_train, scores_test)
+plot_series(scorer_name, ts_train, ts_test, scores_train, scores_test)
 
 
 # Plot distributions of anomaly scores
-plot_dist("K-means scorer", scores_train, scores_test)
+plot_dist(scorer_name, scores_train, scores_test)
 
 
 # 3D anomalies plot
-plot_anom3d("K-means scorer", ts_ottawa, anoms)
+plot_anom3d(scorer_name, ts_ottawa, anoms)
 
 
 # Detections plot

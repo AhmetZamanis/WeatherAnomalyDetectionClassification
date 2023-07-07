@@ -4,6 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
+import lightning as L
+from lightning.pytorch.callbacks import EarlyStopping
+from X_LightningClassesAnom import AutoEncoder, OptunaPruning
 
 
 def score(ts_train, ts_test, scorer, scaler = None):
@@ -159,3 +162,45 @@ def plot_detection(scores_name, quantile, ts, scores, anoms):
 
   plt.show()
   plt.close("all")
+
+
+def validate_nn(hyperparams_dict, train_loader, val_loader, trial, tol = 1e-4):
+  """
+  Validate a set of Torch AutoEncoder parameters & report to Optuna.
+  """
+  
+  # Create callbacks list
+  callbacks = []
+    
+  # Create early stop callback
+  callback_earlystop = EarlyStopping(
+      monitor = "val_loss", mode = "min", min_delta = tol, patience = 10)
+  callbacks.append(callback_earlystop)
+    
+  # Create Optuna pruner callback
+  callback_pruner = OptunaPruning(trial, monitor = "val_loss")
+  callbacks.append(callback_pruner)
+    
+  # Create trainer
+  trainer = L.Trainer(
+    max_epochs = 500,
+    accelerator = "gpu", devices = "auto", precision = "16-mixed", 
+    callbacks = callbacks,
+    enable_model_summary = False, 
+    logger = True,
+    enable_progress_bar = False, # Disable prog. bar, checkpoints for Optuna trials
+    enable_checkpointing = False
+    )
+  
+  # Create & train model
+  model = AutoEncoder(hyperparams_dict = hyperparams_dict)
+  trainer.fit(model, train_loader, val_loader)
+  
+  # Retrieve best val score and n. of epochs
+  score = callback_earlystop.best_score.cpu().numpy()
+  epoch = trainer.current_epoch - callback_earlystop.wait_count # Starts from 1
+  
+  # Return score & epoch
+  return score, epoch
+  
+ 

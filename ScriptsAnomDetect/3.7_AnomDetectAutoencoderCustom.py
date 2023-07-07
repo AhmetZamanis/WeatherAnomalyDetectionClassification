@@ -22,96 +22,96 @@ L.seed_everything(1923, workers = True)
 warnings.filterwarnings("ignore", ".*does not have many workers.*")
 
 
-# Split train - val data
-val_start = pd.Timestamp("1970-01-01")
-train_end = pd.Timestamp("1969-12-31")
-ts_tr = ts_train.drop_after(val_start)
-ts_val = ts_train.drop_before(train_end)
+# # Split train - val data
+# val_start = pd.Timestamp("1970-01-01")
+# train_end = pd.Timestamp("1969-12-31")
+# ts_tr = ts_train.drop_after(val_start)
+# ts_val = ts_train.drop_before(train_end)
+# 
+# 
+#  # Perform preprocessing for train - validation split
+# scaler = StandardScaler()
+# x_tr = scaler.fit_transform(ts_tr.values())
+# x_val = scaler.transform(ts_val.values())
+# 
+# # Load data into TrainDataset
+# train_data = TrainDataset(x_tr)
+# val_data = TrainDataset(x_val)
+# 
+# # Create data loaders
+# train_loader = torch.utils.data.DataLoader(
+#       train_data, batch_size = 128, num_workers = 0, shuffle = True)
+# val_loader = torch.utils.data.DataLoader(
+#       val_data, batch_size = len(ts_val), num_workers = 0, shuffle = False)
+#       
+# 
+# # Define Optuna objective
+# def objective_nn(trial, train_loader, val_loader):
+# 
+#   # Define parameter ranges to tune over & suggest param set for trial
+#   hidden_size = trial.suggest_int("hidden_size", 2, 6, step = 2)
+#   latent_size = trial.suggest_int("latent_size", 1, (hidden_size - 1))
+#   learning_rate = trial.suggest_float("learning_rate", 5e-4, 5e-2)
+#   dropout = trial.suggest_float("dropout", 1e-4, 0.2)
+# 
+#   # Create hyperparameters dict
+#   hyperparams_dict = {
+#       "input_size": ts_train.values().shape[1],
+#       "hidden_size": hidden_size,
+#       "latent_size": latent_size,
+#       "learning_rate": learning_rate,
+#       "dropout": dropout
+#     }
+# 
+#   # Validate hyperparameter set
+#   score, epoch = validate_nn(hyperparams_dict, train_loader, val_loader, trial)
+# 
+#   # Report best n. of epochs
+#   trial.set_user_attr("n_epochs", epoch)
+# 
+#   return score
+# 
+# 
+# # Create study
+# study_nn = optuna.create_study(
+#   sampler = optuna.samplers.TPESampler(seed = 1923),
+#   pruner = optuna.pruners.HyperbandPruner(),
+#   study_name = "tune_nn",
+#   direction = "minimize"
+# )
+# 
+# 
+# # Instantiate objective
+# obj = lambda trial: objective_nn(trial, train_loader, val_loader)
+# 
+# 
+# # Optimize study
+# study_nn.optimize(
+#   obj,
+#   n_trials = 500,
+#   show_progress_bar = True)
+# 
+# 
+# # Retrieve and export trials
+# trials_nn = study_nn.trials_dataframe().sort_values("value", ascending = True)
+# trials_nn.to_csv("./OutputData/trials_nn1.csv", index = False)
 
 
- # Perform preprocessing for train - validation split
-scaler = StandardScaler()
-x_tr = scaler.fit_transform(ts_tr.values())
-x_val = scaler.transform(ts_val.values())
-
-# Load data into TrainDataset
-train_data = TrainDataset(x_tr)
-val_data = TrainDataset(x_val)
-
-# Create data loaders
-train_loader = torch.utils.data.DataLoader(
-      train_data, batch_size = 128, num_workers = 0, shuffle = True)
-val_loader = torch.utils.data.DataLoader(
-      val_data, batch_size = len(ts_val), num_workers = 0, shuffle = False)
-      
-
-# Define Optuna objective
-def objective_nn(trial, train_loader, val_loader):
-
-  # Define parameter ranges to tune over & suggest param set for trial
-  hidden_size = trial.suggest_int("hidden_size", 2, 6, step = 2)
-  latent_size = trial.suggest_int("latent_size", 1, (hidden_size - 1))
-  learning_rate = trial.suggest_float("learning_rate", 5e-4, 5e-2)
-  dropout = trial.suggest_float("dropout", 1e-4, 0.2)
-
-  # Create hyperparameters dict
-  hyperparams_dict = {
-      "input_size": ts_train.values().shape[1],
-      "hidden_size": hidden_size,
-      "latent_size": latent_size,
-      "learning_rate": learning_rate,
-      "dropout": dropout
-    }
-
-  # Validate hyperparameter set
-  score, epoch = validate_nn(hyperparams_dict, train_loader, val_loader, trial)
-
-  # Report best n. of epochs
-  trial.set_user_attr("n_epochs", epoch)
-
-  return score
-
-
-# Create study
-study_nn = optuna.create_study(
-  sampler = optuna.samplers.TPESampler(seed = 1923),
-  pruner = optuna.pruners.HyperbandPruner(),
-  study_name = "tune_nn",
-  direction = "minimize"
-)
-
-
-# Instantiate objective
-obj = lambda trial: objective_nn(trial, train_loader, val_loader)
-
-
-# Optimize study
-study_nn.optimize(
-  obj,
-  n_trials = 500,
-  show_progress_bar = True)
-
-
-# Retrieve and export trials
-trials_nn = study_nn.trials_dataframe().sort_values("value", ascending = True)
-trials_nn.to_csv("./OutputData/trials_nn.csv", index = False)
-
-
-# Import best trial
-best_trial_nn = pd.read_csv("./OutputData/trials_nn.csv").iloc[0,]
-
-
-# Retrieve best hyperparameters
-hyperparams_dict = {
-      "input_size": ts_train.values().shape[1],
-      "hidden_size": best_trial_nn["params_hidden_size"],
-      "latent_size": best_trial_nn["params_latent_size"],
-      "learning_rate": best_trial_nn["params_learning_rate"],
-      "dropout": best_trial_nn["params_dropout"],
-      "n_epochs": best_trial_nn["user_attrs_n_epoch"]
-    }
-
-
+# # Import best trial
+# best_trial_nn = pd.read_csv("./OutputData/trials_nn1.csv").iloc[0,]
+# 
+# 
+# # Retrieve best hyperparameters
+# hyperparams_dict = {
+#       "input_size": ts_train.values().shape[1],
+#       "hidden_size": best_trial_nn["params_hidden_size"],
+#       "latent_size": best_trial_nn["params_latent_size"],
+#       "learning_rate": best_trial_nn["params_learning_rate"],
+#       "dropout": best_trial_nn["params_dropout"],
+#       "n_epochs": best_trial_nn["user_attrs_n_epochs"].astype(np.int32)
+#     }
+# 
+# 
 # Perform preprocessing
 scaler = StandardScaler()
 x_train = scaler.fit_transform(ts_train.values())
@@ -132,27 +132,40 @@ train_score_loader = torch.utils.data.DataLoader(
 
 # Create trainer
 trainer = L.Trainer(
-    max_epochs = hyperparams_dict["best_epoch"],
-    accelerator = "gpu", devices = "auto", precision = "16-mixed", 
-    enable_model_summary = True, 
+    # max_epochs = hyperparams_dict["n_epochs"],
+    max_epochs = 61,
+    accelerator = "gpu", devices = "auto", precision = "16-mixed",
+    enable_model_summary = True,
     logger = True,
     enable_progress_bar = True,
     enable_checkpointing = True
     )
-  
+
 # Create & train model
 model = AutoEncoder(hyperparams_dict = hyperparams_dict)
 trainer.fit(model, train_loader)
 
 
-# Perform anomaly scoring
-scores_train = trainer.predict(model, train_score_loader)[0].detach().cpu().numpy()
-scores_train = scores_train.astype(np.float32)
-scores_train = TimeSeries.from_times_and_values(ts_train.time_index, scores_train)
+# # Load trained model
+# ckpt_path = "./lightning_logs/version_0/checkpoints/epoch=60-step=7015.ckpt"
+# model = AutoEncoder.load_from_checkpoint(ckpt_path)
 
-scores_test = trainer.predict(model, test_loader)[0].detach().cpu().numpy()
-scores_test = scores_test.astype(np.float32)
-scores_test = TimeSeries.from_times_and_values(ts_test.time_index, scores_test)
+
+# Perform anomaly scoring: Get mean reconstruction error for each datapoint
+# DON'T PRINT SCORES TIMESERIES AFTER CREATION, IT HANGS PYTHON
+scores_train = trainer.predict(model, train_score_loader)[0].cpu().numpy().astype(np.float64)
+scores_train = np.abs(x_train - scores_train)
+scores_train = np.mean(scores_train, axis = 1) 
+scores_train = pd.DataFrame(scores_train, index = ts_train.time_index)
+scores_train = TimeSeries.from_dataframe(scores_train)
+scores_train = scores_train.with_columns_renamed("0", "Scores")
+
+scores_test = trainer.predict(model, test_loader)[0].cpu().numpy().astype(np.float64)
+scores_test = np.abs(x_test - scores_test)
+scores_test = np.mean(scores_test, axis = 1) 
+scores_test = pd.DataFrame(scores_test, index = ts_test.time_index)
+scores_test = TimeSeries.from_dataframe(scores_test)
+scores_test = scores_test.with_columns_renamed("0", "Scores")
 scores = scores_train.append(scores_test)
 
 
@@ -161,6 +174,7 @@ anoms_train, anoms_test, anoms = detect(scores_train, scores_test, detector)
 
 
 # Plot scores & original series
+scorer_name = "Autoencoder scorer"
 plot_series(scorer_name, ts_train, ts_test, scores_train, scores_test)
 
 
@@ -170,14 +184,27 @@ plot_dist(scorer_name, scores_train, scores_test)
 
 # 3D anomalies plot
 plot_anom3d(scorer_name, ts_ottawa, anoms)
+# Only a few highest precip. days in summer & fall are labeled as anomalies,
+# along with many "false" anomalies in spring & fall. Maybe the best performance
+# with a higher threshold?
 
 
 # Detections plot
-plot_detection("AutoEncoder scores", q, ts_ottawa, scores, anoms)
+plot_detection("Autoencoder scores", q, ts_ottawa, scores, anoms)
+# The 2000> days with very high precip. are all scored very highly, but many of
+# the highly scored days seem normal
 
 
-# Get latent space
+# Get latent space representations
+def get_latent(model, dataloader):
+  model.eval()
+  with torch.no_grad():
+    z = [model.encoder(x) for _, x in enumerate(dataloader)]
+    return z[0].cpu().numpy().astype(np.float64)
 
+z_train = get_latent(model, train_score_loader)
+z_test = get_latent(model, test_loader)
+z = np.concatenate((z_train, z_test), axis = 0)
 
 
 # Apply T-SNE to latent space
@@ -202,6 +229,8 @@ fig = px.scatter_3d(
     "color": "Anomaly labels"}
 )
 fig.show()
-
+# The plot seems to have unique string-like manifolds for each month / time period.
+# Most anomalies are false anomalies so they don't have distinct separation from
+# the closest manifolds. 
 
 

@@ -97,21 +97,21 @@ warnings.filterwarnings("ignore", ".*does not have many workers.*")
 # trials_nn.to_csv("./OutputData/trials_nn1.csv", index = False)
 
 
-# # Import best trial
-# best_trial_nn = pd.read_csv("./OutputData/trials_nn1.csv").iloc[0,]
-# 
-# 
-# # Retrieve best hyperparameters
-# hyperparams_dict = {
-#       "input_size": ts_train.values().shape[1],
-#       "hidden_size": best_trial_nn["params_hidden_size"],
-#       "latent_size": best_trial_nn["params_latent_size"],
-#       "learning_rate": best_trial_nn["params_learning_rate"],
-#       "dropout": best_trial_nn["params_dropout"],
-#       "n_epochs": best_trial_nn["user_attrs_n_epochs"].astype(np.int32)
-#     }
-# 
-# 
+# Import best trial
+best_trial_nn = pd.read_csv("./OutputData/trials_nn1.csv").iloc[0,]
+
+
+# Retrieve best hyperparameters
+hyperparams_dict = {
+      "input_size": ts_train.values().shape[1],
+      "hidden_size": best_trial_nn["params_hidden_size"],
+      "latent_size": best_trial_nn["params_latent_size"],
+      "learning_rate": best_trial_nn["params_learning_rate"],
+      "dropout": best_trial_nn["params_dropout"],
+      "n_epochs": best_trial_nn["user_attrs_n_epochs"].astype(np.int32)
+    }
+
+
 # Perform preprocessing
 scaler = StandardScaler()
 x_train = scaler.fit_transform(ts_train.values())
@@ -230,7 +230,7 @@ fig = px.scatter_3d(
 )
 fig.show()
 # The plot seems to have unique string-like manifolds for each month / time period.
+# The sub-manifolds are fewer in number & more joined compared to PCAs.
 # Most anomalies are false anomalies so they don't have distinct separation from
 # the closest manifolds. 
-
 

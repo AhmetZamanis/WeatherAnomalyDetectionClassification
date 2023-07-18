@@ -9,6 +9,10 @@ import seaborn as sns
 import plotly.express as px
 import arff
 
+from X_HelperFunctionsClassif import plot_confusion
+from sklearn.metrics import accuracy_score, log_loss
+# from sklearn.model_selection import train_test_split
+
 
 # Set print options
 np.set_printoptions(suppress=True, precision=4)
@@ -82,7 +86,7 @@ df = df.loc[~df["ROWGROUP"].isin(["0", "1007"])]
 
 # Retrieve targets for each subsequence
 y = df.groupby(["LOCATION", "ROWGROUP"]).head(1)["LOCATION"]
-y = y.reset_index().drop("index", axis = 1)
+y = y.reset_index().drop("index", axis = 1).values.flatten()
 
 # Retrieve features for each subsequence: Dataframe with each row as one sequence, 
 # each column one feature, and each cell a pd.Series of N length
@@ -104,3 +108,23 @@ x = df.groupby(["LOCATION", "ROWGROUP"], as_index = False).apply(lambda g: pd.Se
 
 # Check datatype & index of cells
 type(x.iloc[1,0])
+
+
+# Split train & test (most recent 20% sequences for all cities as test)
+
+# Get indices
+l = len(y)
+len_test = int(l / 3 * 0.2)
+len_train = int(l / 3 - len_test)
+j = int(l / 3)
+idx_train = list(range(0, len_train)) + list(range(j, len_train + j)) + list(range(j * 2, len_train + (j * 2)))
+idx_test = list(range(0, l))
+idx_test = list(set(idx_test).difference(idx_train))
+
+# Perform split
+y_train, y_test = y[idx_train], y[idx_test]
+x_train, x_test = x.iloc[idx_train], x.iloc[idx_test]
+
+
+# Get class labels
+classes = np.unique(y_train)

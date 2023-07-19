@@ -88,26 +88,25 @@ df = df.loc[~df["ROWGROUP"].isin(["0", "1007"])]
 y = df.groupby(["LOCATION", "ROWGROUP"]).head(1)["LOCATION"]
 y = y.reset_index().drop("index", axis = 1).values.flatten()
 
-# Retrieve features for each subsequence: Dataframe with each row as one sequence, 
-# each column one feature, and each cell a pd.Series of N length
-def get_series(g, name):
-  return pd.Series(data = g[name].values, name = name)
 
-x = df.groupby(["LOCATION", "ROWGROUP"], as_index = False).apply(lambda g: pd.Series(dict(
-  mean_temp = get_series(g, "MEAN_TEMPERATURE"),
-  total_precip = get_series(g, "TOTAL_PRECIPITATION"),
-  month_sin = get_series(g, "month_sin"),
-  month_cos = get_series(g, "month_cos"),
-  week_sin = get_series(g, "week_sin"),
-  week_cos = get_series(g, "week_cos"),
-  day_sin = get_series(g, "day_sin"),
-  day_cos = get_series(g, "day_cos"),
-    )
+# Retrieve features as 3Darray of shape (n_sequences, n_dimensions, seq_length)
+
+# 2D arrays of (n_dimensions, seq_length) for each sequence
+x = df.groupby(["LOCATION", "ROWGROUP"], as_index = False).apply(lambda g: np.array(
+  [g["MEAN_TEMPERATURE"].values,
+  g["TOTAL_PRECIPITATION"].values,
+  g["month_sin"].values,
+  g["month_cos"].values,
+  g["week_sin"].values,
+  g["week_cos"].values,
+  g["day_sin"].values,
+  g["day_cos"].values
+    ]
   )
-).drop(["LOCATION", "ROWGROUP"], axis = 1)
+)
 
-# Check datatype & index of cells
-type(x.iloc[1,0])
+# 3Darray
+x = np.array([x[i] for i in range(0, len(x))])
 
 
 # Split train & test (most recent 20% sequences for all cities as test)
@@ -123,7 +122,7 @@ idx_test = list(set(idx_test).difference(idx_train))
 
 # Perform split
 y_train, y_test = y[idx_train], y[idx_test]
-x_train, x_test = x.iloc[idx_train], x.iloc[idx_test]
+x_train, x_test = x[idx_train], x[idx_test]
 
 
 # Get class labels

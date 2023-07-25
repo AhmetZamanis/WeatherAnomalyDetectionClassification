@@ -68,7 +68,7 @@ df["day_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 
 
 # Convert to N-day sequences in sktime format
-n = 28
+n = 27
 
 # Enumerate days for each city
 df["DAYCOUNT"] = df.groupby("LOCATION").LOCATION.cumcount().add(1)
@@ -80,9 +80,9 @@ df = df.drop("DAYCOUNT", axis = 1)
 # Eliminate rowgroups which are not of length N
 len(df[df["ROWGROUP"] == "0"]) / 3 # Length N
 len(df[df["ROWGROUP"] == "1"]) / 3 # Length N+1
-len(df[df["ROWGROUP"] == "1006"]) / 3 # Length N+1
-len(df[df["ROWGROUP"] == "1007"]) / 3 # Length <N
-df = df.loc[~df["ROWGROUP"].isin(["0", "1007"])]
+len(df[df["ROWGROUP"] == "1042"]) / 3 # Length N+1
+len(df[df["ROWGROUP"] == "1043"]) / 3 # Length <N
+df = df.loc[~df["ROWGROUP"].isin(["0", "1043"])]
 
 # Retrieve targets for each subsequence
 y = df.groupby(["LOCATION", "ROWGROUP"]).head(1)["LOCATION"]

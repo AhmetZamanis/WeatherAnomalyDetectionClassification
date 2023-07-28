@@ -40,12 +40,12 @@ plot_anom3d(scorer_name, ts_ottawa, anoms)
 
 
 # Detections plot
-plot_detection("PCA scores", q, ts_ottawa, scores, anoms)
+plot_detection("IForest scores", q, ts_ottawa, scores, anoms)
 # The binary detections seem just as well as PCAs, but the scores are not as clearly
 # discriminative.
 
 
-# Feature importances (can be misleading for high cardinality features, i.e. day
+# Feature importances (can be misleading for high cardinality features, e.g day
 # and week features)
 feat_imp = pd.DataFrame({
   "Feature importance": scorer.model.feature_importances_,

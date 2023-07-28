@@ -1,0 +1,797 @@
+---
+title: "Time series anomaly detection - Canadian weather data"
+author: "Ahmet Zamanis"
+format:
+  gfm: 
+    toc: true
+editor: visual
+jupyter: python3
+execute:
+  warning: false
+---
+
+## Introduction
+
+Introduce anomaly detection, packages, report structure
+
+Introduce data & source
+
+```{python Imports}
+#| code-fold: true
+#| code-summary: "Show imports"
+
+# Data handling
+import pandas as pd
+import numpy as np
+import arff
+import warnings
+
+# Plotting
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+
+# Preprocessing
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
+from darts.dataprocessing.transformers.scaler import Scaler
+from darts.dataprocessing.transformers.missing_values_filler import MissingValuesFiller
+
+# Darts
+from darts.timeseries import TimeSeries
+from darts.ad.scorers.kmeans_scorer import KMeansScorer
+from darts.ad.scorers.pyod_scorer import PyODScorer
+from darts.ad.detectors.quantile_detector import QuantileDetector
+
+# PyOD anomaly scorers
+from pyod.models.gmm import GMM
+from pyod.models.ecod import ECOD
+from pyod.models.pca import PCA
+from pyod.models.iforest import IForest
+
+# Torch and Lightning
+import torch
+import lightning as L
+from X_LightningClassesAnom import TrainDataset, TestDataset, AutoEncoder
+
+# Hyperparameter tuning
+import optuna
+
+# Dimensionality reduction
+from sklearn.manifold import TSNE
+
+# Helper functions
+from X_HelperFunctionsAnom import score, detect, plot_series, plot_dist, plot_anom3d, plot_detection, validate_nn
+
+```
+
+```{python Settings}
+#| code-fold: true
+#| code-summary: "Show settings"
+
+# Set print options
+np.set_printoptions(suppress=True, precision=4)
+pd.options.display.float_format = '{:.4f}'.format
+pd.set_option('display.max_columns', None)
+
+# Set plotting options
+plt.rcParams['figure.dpi'] = 300
+plt.rcParams['savefig.dpi'] = 300
+plt.rcParams["figure.autolayout"] = True
+sns.set_style("darkgrid")
+
+# Set Torch settings
+torch.set_default_dtype(torch.float32)
+torch.set_float32_matmul_precision('high')
+L.seed_everything(1923, workers = True)
+warnings.filterwarnings("ignore", ".*does not have many workers.*")
+
+```
+
+## Data preparation
+
+```{python LoadData}
+
+# Load raw data from .arff
+raw_data = arff.load(open("./InputData/canadian_climate.arff", "r"))
+
+# Convert to Pandas dataframe & view
+df = pd.DataFrame(
+  raw_data["data"], columns = [x[0] for x in raw_data["attributes"]])
+print(df)
+
+```
+
+```{python TimeFeatures}
+
+# Convert LOCAL_DATE to datetime
+df["LOCAL_DATE"] = pd.to_datetime(df["LOCAL_DATE"])
+
+# Add cyclic terms for month, week of year and day of year
+df["month_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.month / 12)
+df["month_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.month / 12)
+df["week_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.week / 53)
+df["week_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.week / 53)
+df["day_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
+df["day_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
+
+```
+
+```{python TSOttawa}
+
+# Retrieve the weather data for Ottawa (1940 start) as Darts TimeSeries
+ts_ottawa = TimeSeries.from_dataframe(
+  df,
+  time_col = "LOCAL_DATE",
+  value_cols = ["MEAN_TEMPERATURE_OTTAWA", "TOTAL_PRECIPITATION_OTTAWA"],
+  fill_missing_dates = True
+)
+ts_ottawa
+
+# Interpolate missing values
+na_filler = MissingValuesFiller()
+ts_ottawa = na_filler.transform(ts_ottawa)
+
+```
+
+```{python TSCovars}
+
+# Retrieve date covariates as Darts TS
+ts_covars = TimeSeries.from_dataframe(
+  df,
+  time_col = "LOCAL_DATE",
+  value_cols = ['month_sin', 'month_cos', 'week_sin', 'week_cos', 'day_sin', 
+  'day_cos'],
+  fill_missing_dates = True
+)
+ts_covars
+
+```
+
+```{python Preprocess}
+
+# Concatenate time covariates to Ottawa weather series
+ts_ottawa = ts_ottawa.concatenate(ts_covars, axis = 1)
+
+# Split train-test data
+test_start = pd.Timestamp("1980-01-01")
+train_end = pd.Timestamp("1979-12-31")
+ts_train = ts_ottawa.drop_after(test_start)
+ts_test = ts_ottawa.drop_before(train_end)
+
+```
+
+## Anomaly detection
+
+```{python Utilities}
+
+# Create Darts wrapper for MinMaxScaler
+feature_range = (-1, 1) # The value range of cyclical encoded features
+scaler = Scaler(MinMaxScaler(feature_range = feature_range))
+
+# Create quantile detector
+q = 0.99 # The detectpr will flag scores above this quantile as anomalies
+detector = QuantileDetector(high_quantile = q)
+
+```
+
+### K-means clustering
+
+```{python KMeansScore}
+
+# Create K-means scorer
+scorer_kmeans = KMeansScorer(
+  window = 1, # Score each time step by itself
+  k = 12, # Number of K-means clusters
+  random_state = 1923)
+
+# Perform anomaly scoring
+scores_train_kmeans, scores_test_kmeans, scores_kmeans = score(
+  ts_train, ts_test, scorer_kmeans, scaler)
+scores_kmeans
+
+```
+
+```{python KMeansDetect}
+
+# Perform anomaly detection
+anoms_train_kmeans, anoms_test_kmeans, anoms_kmeans = detect(
+  scores_train_kmeans, scores_test_kmeans, detector)
+anoms_kmeans
+
+```
+
+```{python KMeansPlotSeries}
+
+# Plot anomaly scores & original series
+plot_series(
+  "K-means scorer", ts_train, ts_test, scores_train_kmeans, scores_test_kmeans)
+  
+```
+
+```{python KMeansPlotDetect}
+
+# Detections plot
+plot_detection("K-means scores", q, ts_ottawa, scores_kmeans, anoms_kmeans)
+
+```
+
+```{python KMeansPlotDist}
+
+# Plot distributions of anomaly scores
+plot_dist("K-means scorer", scores_train_kmeans, scores_test_kmeans)
+
+```
+
+```{python KMeansPlot3D}
+
+# 3D anomalies plot
+plot_anom3d("K-means scorer", ts_ottawa, anoms_kmeans)
+
+```
+
+```{python KMeansClustering}
+#| code-fold:true
+#| code-summary: "Show code for 3D clustering plot"
+
+# Clustering plot
+train_labels = scorer_kmeans.model.labels_.astype(str)
+fig = px.scatter_3d(
+  x = ts_train['MEAN_TEMPERATURE_OTTAWA'].univariate_values(),
+  y = ts_train['TOTAL_PRECIPITATION_OTTAWA'].univariate_values(),
+  z = ts_train.time_index.month,
+  color = train_labels,
+  title = "K-Means clustering plot, train set",
+  labels = {
+    "x": "Mean temperature",
+    "y": "Total precipitation",
+    "z": "Month",
+    "color": "Clusters"}
+)
+fig.show()
+
+```
+
+### Gaussian mixture models (GMM)
+
+```{python CreateGMM}
+
+# Create PyOD GMM model
+gmm = GMM(
+  n_components = 4, # N. of Gaussian mixture components
+  n_init = 10, # N. of initializations for expectation maximization
+  contamination = 0.01, # % of expected anomalies in the dataset
+  random_state = 1923)
+  
+# Create Darts GMM scorer  
+scorer_gmm = PyODScorer(model = gmm, window = 1)
+
+```
+
+```{python GMMCode}
+#| code-fold: true
+#| code-summary: "Show code for GMM anomaly detection"
+
+# Perform anomaly scoring
+scores_train_gmm, scores_test_gmm, scores_gmm = score(
+  ts_train, ts_test, scorer_gmm, scaler)
+
+# Perform anomaly detection
+anoms_train_gmm, anoms_test_gmm, anoms_gmm = detect(
+  scores_train_gmm, scores_test_gmm, detector)
+
+# Plot scores & original series
+plot_series("GMM scorer", ts_train, ts_test, scores_train_gmm, scores_test_gmm)
+
+# Detections plot
+plot_detection("GMM scores", q, ts_ottawa, scores_gmm, anoms_gmm)
+
+# Plot distributions of anomaly scores
+plot_dist("GMM scorer", scores_train_gmm, scores_test_gmm)
+
+# 3D anomalies plot
+plot_anom3d("GMM scorer", ts_ottawa, anoms_gmm)
+
+# 3D cluster plot
+labels = scorer_gmm.model.detector_.predict(
+  scaler.transform(ts_ottawa).values()).astype(str)
+fig = px.scatter_3d(
+  x = ts_ottawa['MEAN_TEMPERATURE_OTTAWA'].univariate_values(),
+  y = ts_ottawa['TOTAL_PRECIPITATION_OTTAWA'].univariate_values(),
+  z = ts_ottawa.time_index.month,
+  color = labels,
+  title = "GMM clustering plot",
+  labels = {
+    "x": "Mean temperature",
+    "y": "Total precipitation",
+    "z": "Month",
+    "color": "Clusters"}
+)
+fig.show()
+
+```
+
+### ECOD
+
+```{python CreateECOD}
+
+# Create ECOD scorer
+ecod = ECOD(contamination = 0.01)
+scorer_ecod = PyODScorer(model = ecod, window = 1)
+
+```
+
+```{python ECODCode}
+#| code-fold: true
+#| code-summary: "Show code for ECOD anomaly detection"
+
+# Perform anomaly scoring
+scores_train_ecod, scores_test_ecod, scores_ecod = score(
+  ts_train, ts_test, scorer_ecod)
+
+# Perform anomaly detection
+anoms_train_ecod, anoms_test_ecod, anoms_ecod = detect(
+  scores_train_ecod, scores_test_ecod, detector)
+
+# Plot scores & original series
+plot_series("ECOD scorer", ts_train, ts_test, scores_train_ecod, scores_test_ecod)
+
+# Detections plot
+plot_detection("ECOD scores", q, ts_ottawa, scores_ecod, anoms_ecod)
+
+# Plot distributions of anomaly scores
+plot_dist("ECOD scorer", scores_train_ecod, scores_test_ecod)
+
+# 3D anomalies plot
+plot_anom3d("ECOD scorer", ts_ottawa, anoms_ecod)
+
+```
+
+```{python ECODExplainer}
+
+# Special to scorer: Explain a single training point's outlier scoring
+idx_max_precip = np.argmax(
+  ts_train['TOTAL_PRECIPITATION_OTTAWA'].univariate_values())
+scorer.model.explain_outlier(
+  ind = idx_max_precip, # Index of point to explain
+  columns = [1, 2, 3, 4], # Dimensions to explain
+  feature_names = ["MeanTemp", "TotalPrecip", "MonthSin", "MonthCos"])
+plt.close("all")
+
+```
+
+### Principal components analysis (PCA)
+
+```{python CreatePCA}
+
+# Create PCA scorer
+pca = PCA(contamination = 0.01, standardization = True, random_state = 1923)
+scorer_pca = PyODScorer(model = pca, window = 1)
+
+```
+
+```{python PCACode}
+#| code-fold: true
+#| code-summary: "Show code for PCA anomaly detection"
+
+# Perform anomaly scoring
+scores_train_pca, scores_test_pca, scores_pca = score(
+  ts_train, ts_test, scorer_pca)
+
+# Perform anomaly detection
+anoms_train_pca, anoms_test_pca, anoms_pca = detect(
+  scores_train_pca, scores_test_pca, detector)
+
+# Plot scores & original series
+plot_series("PCA scorer", ts_train, ts_test, scores_train_pca, scores_test_pca)
+
+# Detections plot
+plot_detection("PCA scores", q, ts_ottawa, scores_pca, anoms_pca)
+
+# Plot distributions of anomaly scores
+plot_dist("PCA scorer", scores_train_pca, scores_test_pca)
+
+# 3D anomalies plot
+plot_anom3d("PCA scorer", ts_ottawa, anoms_pca)
+
+```
+
+#### PC & T-SNE plots
+
+```{python PCAVariances}
+
+# Variances explained by each component: First 3 PCs explain almost 99%
+pc_variances = scorer_pca.model.explained_variance_ratio_ * 100
+pc_variances = [round(x, 2) for x in pc_variances]
+pc_variances
+
+```
+
+```{python PCAHeatplot}
+#| code-fold: true
+#| code-summary: "Show code to generate PC loadings heatplot"
+
+# Heatplot of PC loadings, X = PCs, Y = Features's contribution to the PCs
+pc_loadings = pd.DataFrame(
+  scorer_pca.model.components_.T,
+  columns = pc_variances,
+  index = ts_ottawa.components)
+_ = sns.heatmap(pc_loadings, cmap = "PiYG")
+_ = plt.title("PC loadings")
+_ = plt.xlabel("% variances explained by PCs")
+_ = plt.ylabel("Features")
+plt.show()
+plt.close("all")
+
+```
+
+```{python PCA3DPlots}
+#| code-fold: true
+#| code-summary: "Show code to generate 3D PC plots"
+
+# Transform data into PC values
+pcs = scorer_pca.model.detector_.transform(
+  scorer_pca.model.scaler_.transform(ts_ottawa.values())
+  )
+
+# Principal components plot, first 3 PCs  
+fig = px.scatter_3d(
+  x = pcs[:, 0],
+  y = pcs[:, 1],
+  z = pcs[:, 2],
+  color = anoms_pca.univariate_values().astype(str),
+  title = "PCA components plot, first 3 PCs",
+  labels = {
+    "x": "PC1",
+    "y": "PC2",
+    "z": "PC3",
+    "color": "Anomaly labels"}
+)
+fig.show()
+
+
+# Principal components plot, PC3-4-5
+fig = px.scatter_3d(
+  x = pcs[:, 4],
+  y = pcs[:, 3],
+  z = pcs[:, 2],
+  color = anoms_pca.univariate_values().astype(str),
+  title = "PCA components plot, middle 3 PCs",
+  labels = {
+    "x": "PC5",
+    "y": "PC4",
+    "z": "PC3",
+    "color": "Anomaly labels"}
+)
+fig.show()
+
+
+# Principal components plot, last 3 PCs
+fig = px.scatter_3d(
+  x = pcs[:, -1],
+  y = pcs[:, -2],
+  z = pcs[:, -3],
+  color = anoms_pca.univariate_values().astype(str),
+  title = "PCA components plot, last 3 PCs",
+  labels = {
+    "x": "PC6",
+    "y": "PC7",
+    "z": "PC8",
+    "color": "Anomaly labels"}
+)
+fig.show()
+
+```
+
+```{python PCATSNE}
+#| code-fold: true
+#| code-summary: "Show code to generate 3D T-SNE plot"
+
+# Standardize & normalize PCs
+std_scaler = StandardScaler()
+pcs_scaled = std_scaler.fit_transform(pcs)
+
+# Apply T-SNE to PCs
+tsne = TSNE(n_components = 3)
+z_pca = tsne.fit_transform(pcs_scaled)
+
+# T-SNE dimensions plot
+fig = px.scatter_3d(
+  x = z_pca[:, 0],
+  y = z_pca[:, 1],
+  z = z_pca[:, 2],
+  color = anoms.univariate_values().astype(str),
+  title = "PCA components plot, 3D T-SNE reduction",
+  labels = {
+    "x": "Dim1",
+    "y": "Dim2",
+    "z": "Dim3",
+    "color": "Anomaly labels"}
+)
+fig.show()
+
+```
+
+### Isolation forest
+
+```{python CreateIForest}
+
+# Create IForest scorer
+iforest = IForest(
+  n_estimators= 500, # N. of trees in forest
+  contamination = 0.01,
+  random_state = 1923)
+scorer_iforest = PyODScorer(model = iforest, window = 1)
+
+```
+
+```{python IForestCode}
+#| code-fold: true
+#| code-summary: "Show code for IForest anomaly detection"
+
+# Perform anomaly scoring
+scores_train_iforest, scores_test_iforest, scores_iforest = score(
+  ts_train, ts_test, scorer_iforest)
+
+# Perform anomaly detection
+anoms_train_iforest, anoms_test_iforest, anoms_iforest = detect(
+  scores_train_iforest, scores_test_iforest, detector)
+
+# Plot scores & original series
+plot_series(
+  "IForest scorer", ts_train, ts_test, scores_train_iforest, scores_test_iforest)
+
+# Detections plot
+plot_detection("IForest scores", q, ts_ottawa, scores_iforest, anoms_iforest)
+
+# Plot distributions of anomaly scores
+plot_dist("IForest scorer", scores_train_iforest, scores_test_iforest)
+
+# 3D anomalies plot
+plot_anom3d("IForest scorer", ts_ottawa, anoms_iforest)
+
+```
+
+```{python IForestFeatImp}
+#| code-fold: true
+#| code-summary: "Show code to plot IForest feature importances"
+
+# Feature importances (can be misleading for high cardinality features, e.g. day
+# and week features)
+feat_imp = pd.DataFrame({
+  "Feature importance": scorer_iforest.model.feature_importances_,
+  "Feature": ts_ottawa.components
+}).sort_values("Feature importance", ascending = False)
+_ = sns.barplot(data = feat_imp, x = "Feature importance", y = "Feature")
+plt.show()
+plt.close("all")
+
+```
+
+### Autoencoder with PyTorch Lightning
+
+#### Hyperparameter tuning
+
+```{python TuneAutoencoder}
+#| code-fold: true
+#| code-summary: "Show code to tune Autoencoder hyperparameters"
+#| eval: false
+
+
+# Split train - val data
+val_start = pd.Timestamp("1970-01-01")
+train_end = pd.Timestamp("1969-12-31")
+ts_tr = ts_train.drop_after(val_start)
+ts_val = ts_train.drop_before(train_end)
+
+ # Perform preprocessing for train - validation split
+x_tr = std_scaler.fit_transform(ts_tr.values())
+x_val = std_scaler.transform(ts_val.values())
+
+# Load data into TrainDataset
+train_data = TrainDataset(x_tr)
+val_data = TrainDataset(x_val)
+
+# Create data loaders
+train_loader = torch.utils.data.DataLoader(
+      train_data, batch_size = 128, num_workers = 0, shuffle = True)
+val_loader = torch.utils.data.DataLoader(
+      val_data, batch_size = len(ts_val), num_workers = 0, shuffle = False)
+
+
+# Define Optuna objective
+def objective_nn(trial, train_loader, val_loader):
+
+  # Define parameter ranges to tune over & suggest param set for trial
+  hidden_size = trial.suggest_int("hidden_size", 2, 6, step = 2)
+  latent_size = trial.suggest_int("latent_size", 1, (hidden_size - 1))
+  learning_rate = trial.suggest_float("learning_rate", 5e-4, 5e-2)
+  dropout = trial.suggest_float("dropout", 1e-4, 0.2)
+
+  # Create hyperparameters dict
+  hyperparams_dict = {
+      "input_size": ts_train.values().shape[1],
+      "hidden_size": hidden_size,
+      "latent_size": latent_size,
+      "learning_rate": learning_rate,
+      "dropout": dropout}
+
+  # Validate hyperparameter set
+  score, epoch = validate_nn(hyperparams_dict, train_loader, val_loader, trial)
+
+  # Report best n. of epochs
+  trial.set_user_attr("n_epochs", epoch)
+
+  return score
+
+
+# Create study
+study_nn = optuna.create_study(
+  sampler = optuna.samplers.TPESampler(seed = 1923),
+  pruner = optuna.pruners.HyperbandPruner(),
+  study_name = "tune_nn",
+  direction = "minimize"
+)
+
+# Instantiate objective
+obj = lambda trial: objective_nn(trial, train_loader, val_loader)
+
+# Optimize study
+study_nn.optimize(
+  obj,
+  n_trials = 500,
+  show_progress_bar = True)
+
+# Retrieve and export trials
+trials_nn = study_nn.trials_dataframe().sort_values("value", ascending = True)
+trials_nn.to_csv("./OutputData/trials_nnX.csv", index = False)
+
+```
+
+#### Anomaly detection
+
+```{python TrainAutoencoder}
+#| code-fold: true
+#| code-summary: "Show code to train & predict with Autoencoder model"
+
+
+# Import best trial
+best_trial_nn = pd.read_csv("./OutputData/trials_nn1.csv").iloc[0,]
+
+# Retrieve best hyperparameters
+hyperparams_dict = {
+      "input_size": ts_train.values().shape[1],
+      "hidden_size": best_trial_nn["params_hidden_size"],
+      "latent_size": best_trial_nn["params_latent_size"],
+      "learning_rate": best_trial_nn["params_learning_rate"],
+      "dropout": best_trial_nn["params_dropout"]}
+
+
+# Perform preprocessing
+x_train = std_scaler.fit_transform(ts_train.values())
+x_test = std_scaler.transform(ts_test.values())
+
+# Load data into TrainDataset & TestDataset
+train_data = TrainDataset(x_train)
+test_data = TestDataset(x_test)
+train_score_data = TestDataset(x_train)
+
+# Create data loaders
+train_loader = torch.utils.data.DataLoader(
+      train_data, batch_size = 128, num_workers = 0, shuffle = True)
+test_loader = torch.utils.data.DataLoader(
+      test_data, batch_size = len(ts_test), num_workers = 0, shuffle = False)
+train_score_loader = torch.utils.data.DataLoader(
+      train_score_data, batch_size = len(ts_train), num_workers = 0, shuffle = False)
+
+
+# Create trainer
+trainer = L.Trainer(
+    max_epochs = int(best_trial_nn["user_attrs_n_epochs"]),
+    accelerator = "gpu", devices = "auto", precision = "16-mixed",
+    enable_model_summary = True,
+    logger = True,
+    enable_progress_bar = True,
+    enable_checkpointing = True
+    )
+
+# Create & train model
+model = AutoEncoder(hyperparams_dict = hyperparams_dict)
+trainer.fit(model, train_loader)
+
+# Perform reconstructions of training & testing data
+preds_train = trainer.predict(
+  model, train_score_loader)[0].cpu().numpy().astype(np.float64)
+preds_test = trainer.predict(
+  model, test_loader)[0].cpu().numpy().astype(np.float64)
+
+```
+
+```{python ScoreAutoencoder}
+#| code-fold: true
+#| code-summary: "Show code to get reconstruction errors"
+
+
+# Perform anomaly scoring: Get mean reconstruction error for each datapoint
+
+# Train set
+scores_train = np.abs(x_train - preds_train) # Absolute errors of each dimensions
+scores_train = np.mean(scores_train, axis = 1) # Mean absolute error over all dimensions
+scores_train = pd.DataFrame(scores_train, index = ts_train.time_index) # Dataframe with corresponding dates
+scores_train = TimeSeries.from_dataframe(scores_train) # Darts TS
+scores_train = scores_train.with_columns_renamed("0", "Scores")
+
+# Test set
+scores_test = np.abs(x_test - preds_test)
+scores_test = np.mean(scores_test, axis = 1) 
+scores_test = pd.DataFrame(scores_test, index = ts_test.time_index)
+scores_test = TimeSeries.from_dataframe(scores_test)
+scores_test = scores_test.with_columns_renamed("0", "Scores")
+scores = scores_train.append(scores_test)
+
+```
+
+```{python CodeAutoencoder}
+#| code-fold: true
+#| code-summary: "Show code for Autoencoder anomaly detection"
+
+# Perform anomaly detection
+anoms_train, anoms_test, anoms = detect(scores_train, scores_test, detector)
+
+# Plot scores & original series
+plot_series("Autoencoder scorer", ts_train, ts_test, scores_train, scores_test)
+
+# Detections plot
+plot_detection("Autoencoder scores", q, ts_ottawa, scores, anoms)
+
+# Plot distributions of anomaly scores
+plot_dist("Autoencoder scorer", scores_train, scores_test)
+
+# 3D anomalies plot
+plot_anom3d("Autoencoder scorer", ts_ottawa, anoms)
+
+```
+
+#### Latent space plot with T-SNE
+
+```{python AutoencoderTSNE}
+#| code-fold: true
+#| code-summary: "Show code to generate 3D T-SNE plot"
+
+
+# Define function to get latent space representations
+def get_latent(model, dataloader):
+  model.eval() # Put model into inference mode
+  with torch.no_grad(): # Disable gradient calculation
+    z = [model.encoder(x) for _, x in enumerate(dataloader)]
+    return z[0].cpu().numpy().astype(np.float64)
+
+# Retrieve & concatenate latent space representations
+z_train = get_latent(model, train_score_loader)
+z_test = get_latent(model, test_loader)
+z = np.concatenate((z_train, z_test), axis = 0)
+
+
+# Apply T-SNE to latent space
+z_scaled = std_scaler.fit_transform(z)
+z_autoencoder = tsne.fit_transform(z_scaled)
+
+
+# Latent space plot
+fig = px.scatter_3d(
+  x = z_autoencoder[:, 0],
+  y = z_autoencoder[:, 1],
+  z = z_autoencoder[:, 2],
+  color = anoms.univariate_values().astype(str),
+  title = "Autoencoder latent space plot, 3D T-SNE reduction",
+  labels = {
+    "x": "Dim1",
+    "y": "Dim2",
+    "z": "Dim3",
+    "color": "Anomaly labels"}
+)
+fig.show()
+
+```
+
+## Conclusion

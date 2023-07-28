@@ -22,79 +22,79 @@ L.seed_everything(1923, workers = True)
 warnings.filterwarnings("ignore", ".*does not have many workers.*")
 
 
-# # Split train - val data
-# val_start = pd.Timestamp("1970-01-01")
-# train_end = pd.Timestamp("1969-12-31")
-# ts_tr = ts_train.drop_after(val_start)
-# ts_val = ts_train.drop_before(train_end)
-# 
-# 
-#  # Perform preprocessing for train - validation split
-# scaler = StandardScaler()
-# x_tr = scaler.fit_transform(ts_tr.values())
-# x_val = scaler.transform(ts_val.values())
-# 
-# # Load data into TrainDataset
-# train_data = TrainDataset(x_tr)
-# val_data = TrainDataset(x_val)
-# 
-# # Create data loaders
-# train_loader = torch.utils.data.DataLoader(
-#       train_data, batch_size = 128, num_workers = 0, shuffle = True)
-# val_loader = torch.utils.data.DataLoader(
-#       val_data, batch_size = len(ts_val), num_workers = 0, shuffle = False)
-#       
-# 
-# # Define Optuna objective
-# def objective_nn(trial, train_loader, val_loader):
-# 
-#   # Define parameter ranges to tune over & suggest param set for trial
-#   hidden_size = trial.suggest_int("hidden_size", 2, 6, step = 2)
-#   latent_size = trial.suggest_int("latent_size", 1, (hidden_size - 1))
-#   learning_rate = trial.suggest_float("learning_rate", 5e-4, 5e-2)
-#   dropout = trial.suggest_float("dropout", 1e-4, 0.2)
-# 
-#   # Create hyperparameters dict
-#   hyperparams_dict = {
-#       "input_size": ts_train.values().shape[1],
-#       "hidden_size": hidden_size,
-#       "latent_size": latent_size,
-#       "learning_rate": learning_rate,
-#       "dropout": dropout
-#     }
-# 
-#   # Validate hyperparameter set
-#   score, epoch = validate_nn(hyperparams_dict, train_loader, val_loader, trial)
-# 
-#   # Report best n. of epochs
-#   trial.set_user_attr("n_epochs", epoch)
-# 
-#   return score
-# 
-# 
-# # Create study
-# study_nn = optuna.create_study(
-#   sampler = optuna.samplers.TPESampler(seed = 1923),
-#   pruner = optuna.pruners.HyperbandPruner(),
-#   study_name = "tune_nn",
-#   direction = "minimize"
-# )
-# 
-# 
-# # Instantiate objective
-# obj = lambda trial: objective_nn(trial, train_loader, val_loader)
-# 
-# 
-# # Optimize study
-# study_nn.optimize(
-#   obj,
-#   n_trials = 500,
-#   show_progress_bar = True)
-# 
-# 
-# # Retrieve and export trials
-# trials_nn = study_nn.trials_dataframe().sort_values("value", ascending = True)
-# trials_nn.to_csv("./OutputData/trials_nn1.csv", index = False)
+# Split train - val data
+val_start = pd.Timestamp("1970-01-01")
+train_end = pd.Timestamp("1969-12-31")
+ts_tr = ts_train.drop_after(val_start)
+ts_val = ts_train.drop_before(train_end)
+
+
+ # Perform preprocessing for train - validation split
+scaler = StandardScaler()
+x_tr = scaler.fit_transform(ts_tr.values())
+x_val = scaler.transform(ts_val.values())
+
+# Load data into TrainDataset
+train_data = TrainDataset(x_tr)
+val_data = TrainDataset(x_val)
+
+# Create data loaders
+train_loader = torch.utils.data.DataLoader(
+      train_data, batch_size = 128, num_workers = 0, shuffle = True)
+val_loader = torch.utils.data.DataLoader(
+      val_data, batch_size = len(ts_val), num_workers = 0, shuffle = False)
+
+
+# Define Optuna objective
+def objective_nn(trial, train_loader, val_loader):
+
+  # Define parameter ranges to tune over & suggest param set for trial
+  hidden_size = trial.suggest_int("hidden_size", 2, 6, step = 2)
+  latent_size = trial.suggest_int("latent_size", 1, (hidden_size - 1))
+  learning_rate = trial.suggest_float("learning_rate", 5e-4, 5e-2)
+  dropout = trial.suggest_float("dropout", 1e-4, 0.2)
+
+  # Create hyperparameters dict
+  hyperparams_dict = {
+      "input_size": ts_train.values().shape[1],
+      "hidden_size": hidden_size,
+      "latent_size": latent_size,
+      "learning_rate": learning_rate,
+      "dropout": dropout
+    }
+
+  # Validate hyperparameter set
+  score, epoch = validate_nn(hyperparams_dict, train_loader, val_loader, trial)
+
+  # Report best n. of epochs
+  trial.set_user_attr("n_epochs", epoch)
+
+  return score
+
+
+# Create study
+study_nn = optuna.create_study(
+  sampler = optuna.samplers.TPESampler(seed = 1923),
+  pruner = optuna.pruners.HyperbandPruner(),
+  study_name = "tune_nn",
+  direction = "minimize"
+)
+
+
+# Instantiate objective
+obj = lambda trial: objective_nn(trial, train_loader, val_loader)
+
+
+# Optimize study
+study_nn.optimize(
+  obj,
+  n_trials = 500,
+  show_progress_bar = True)
+
+
+# Retrieve and export trials
+trials_nn = study_nn.trials_dataframe().sort_values("value", ascending = True)
+trials_nn.to_csv("./OutputData/trials_nnX.csv", index = False)
 
 
 # Import best trial

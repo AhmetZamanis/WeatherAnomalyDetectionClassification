@@ -9,7 +9,7 @@ import seaborn as sns
 import plotly.express as px
 import arff
 
-from X_HelperFunctionsClassif import plot_confusion
+from X_HelperFunctionsClassif import plot_confusion, scale_dims
 from sklearn.metrics import accuracy_score, log_loss
 # from sklearn.model_selection import train_test_split
 

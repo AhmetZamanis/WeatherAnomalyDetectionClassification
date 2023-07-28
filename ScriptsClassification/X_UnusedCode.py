@@ -20,3 +20,6 @@ x = df.groupby(["LOCATION", "ROWGROUP"], as_index = False).apply(lambda g: pd.Se
 
 # Check datatype & index of cells
 type(x.iloc[1,0])
+
+
+

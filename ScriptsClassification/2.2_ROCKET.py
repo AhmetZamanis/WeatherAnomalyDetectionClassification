@@ -32,12 +32,17 @@ probs_rocket = model_rocket.predict_proba(x_test) # ROCKET is not probabilistic
 
 
 # Calculate multiclass performance metrics
+# Interesting note: RocketClassifier uses StandardScaler(with_mean = False) by 
+# default. When 0-1 scaling was also applied beforehand, the performance was 
+# exactly the same.
 
 # Accuracy
 accuracy_score(y_test, preds_rocket)
+# 0.5400641025641025
 
 # Log loss
 log_loss(y_test, probs_rocket, labels = classes) # ROCKET is not probabilistic
+# 16.57777006839202
 
 
 # Plot confusion matrix
@@ -63,9 +68,11 @@ probs_arsenal = model_arsenal.predict_proba(x_test)
 
 # Accuracy
 accuracy_score(y_test, preds_arsenal)
+# 0.5576923076923077
 
 # Log loss
 log_loss(y_test, probs_arsenal, labels = classes) 
+# 2.3082290412092235
 
 
 # Plot confusion matrix

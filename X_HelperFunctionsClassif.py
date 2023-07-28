@@ -83,6 +83,51 @@ def get_images(x_train, x_test, trafo):
   return output_train, output_test
 
 
+def scale_dims(x_train, x_test):
+  """
+  Performs dimension-wise 0-1 scaling given a 3Darray input of shape 
+  (n_seq, n_dims, seq_length).
+  """
+  
+  # Retrieve number of dimensions
+  n_dims = x_train.shape[1]
+  
+  # Retrieve each dimension in a list
+  dims_train = [x_train[:, i, :] for i in range(0, n_dims)]
+  dims_test = [x_test[:, i, :] for i in range(0, n_dims)]
+  
+  # Fit & transform training data for each dimension
+  fitted_mins = []
+  fitted_maxi = []
+  output_train = []
+  output_test = []
+  
+  for dim in dims_train:
+    
+    # Retrieve & save min, max of the dimension matrix
+    dim_min = np.min(dim)
+    dim_max = np.max(dim)
+    fitted_mins.append(dim_min)
+    fitted_maxi.append(dim_max)
+    
+    # Scale values between 0 and 1, append to list
+    transformed = (dim - dim_min) / (dim_max - dim_min)
+    output_train.append(transformed)
+    
+  # Transform testing data for each dimension
+  for i, dim in enumerate(dims_test):
+    
+    # Scale dimension, append to list
+    transformed = (dim - fitted_mins[i]) / (fitted_maxi[i] - fitted_mins[i])
+    output_test.append(transformed)
+    
+  # Stack the outputs
+  output_train = np.stack(output_train, axis = 1)
+  output_test = np.stack(output_test, axis = 1)
+
+  return output_train, output_test
+
+
 def plot_images(data, dim, dimname, seq1, seq2, seq_per_city):
   """
   Plots the recurrence plot for two sequences, all cities, one dimension.

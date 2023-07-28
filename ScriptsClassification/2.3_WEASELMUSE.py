@@ -8,6 +8,10 @@ exec(open("./ScriptsClassification/1_DataPrep.py").read())
 from sktime.classification.dictionary_based import MUSE
 
 
+# Scale the features
+x_train, x_test = scale_dims(x_train, x_test)
+
+
 # Create WEASELMUSE classifier
 model_muse = MUSE(
   use_first_order_differences = False, # Not meaningful for time features
@@ -28,9 +32,11 @@ probs_muse = model_muse.predict_proba(x_test)
 
 # Accuracy
 accuracy_score(y_test, preds_muse)
+# 0.6073717948717948
 
 # Log loss
 log_loss(y_test, probs_muse, labels = classes)
+# 1.1958264093104147
 
 
 # Plot confusion matrix

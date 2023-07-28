@@ -12,7 +12,7 @@ import optuna
 
 from sklearn.preprocessing import OneHotEncoder
 from X_LightningClassesClassif import TrainDataset, TestDataset, CNN, OptunaPruning
-from X_HelperFunctionsClassif import validate_cnn, plot_confusion
+from X_HelperFunctionsClassif import validate_cnn
 
 
 # Set Torch settings
@@ -84,7 +84,7 @@ study_cnn.optimize(obj, n_trials = 500, show_progress_bar = True)
 
 # Retrieve and export trials
 trials_cnn = study_cnn.trials_dataframe().sort_values("value", ascending = True)
-trials_cnn.to_csv("./OutputData/trials_cnn1.csv", index = False)
+trials_cnn.to_csv("./OutputData/trials_cnnX.csv", index = False)
 
 
 # Import best trial

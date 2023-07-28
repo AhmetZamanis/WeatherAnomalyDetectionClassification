@@ -5,19 +5,16 @@
 exec(open("./ScriptsClassification/1_DataPrep.py").read())
 
 # from sktime.transformations.compose import ColumnwiseTransformer
-# from sklearn.preprocessing import MinMaxScaler
+
 from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
+
+
+# Scale the features
+x_train, x_test = scale_dims(x_train, x_test)
 
 
 # Create KNN classifier
 model_knn = KNeighborsTimeSeriesClassifier(n_neighbors = 3, n_jobs = -1)
-
-
-# # Scale data (wrapper doesn't work)
-# scaler = MinMaxScaler(feature_range = (0, 1))
-# scaler = ColumnwiseTransformer(scaler)
-# x_train = scaler.fit_transform(x_train)
-# x_test = scaler.transform(x_test)
 
 
 # Fit on training data
@@ -33,9 +30,11 @@ probs_knn = model_knn.predict_proba(x_test)
 
 # Accuracy
 accuracy_score(y_test, preds_knn)
+# 0.6602564102564102
 
 # Log loss
 log_loss(y_test, probs_knn, labels = classes)
+# 5.575000713123325
 
 
 # Plot confusion matrix

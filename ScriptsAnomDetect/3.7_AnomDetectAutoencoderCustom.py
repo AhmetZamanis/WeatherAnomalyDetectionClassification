@@ -107,8 +107,7 @@ hyperparams_dict = {
       "hidden_size": best_trial_nn["params_hidden_size"],
       "latent_size": best_trial_nn["params_latent_size"],
       "learning_rate": best_trial_nn["params_learning_rate"],
-      "dropout": best_trial_nn["params_dropout"],
-      "n_epochs": best_trial_nn["user_attrs_n_epochs"].astype(np.int32)
+      "dropout": best_trial_nn["params_dropout"]
     }
 
 
@@ -133,7 +132,7 @@ train_score_loader = torch.utils.data.DataLoader(
 # Create trainer
 trainer = L.Trainer(
     # max_epochs = hyperparams_dict["n_epochs"],
-    max_epochs = 61,
+    max_epochs = int(best_trial_nn["user_attrs_n_epochs"]),
     accelerator = "gpu", devices = "auto", precision = "16-mixed",
     enable_model_summary = True,
     logger = True,
@@ -199,7 +198,7 @@ plot_detection("Autoencoder scores", q, ts_ottawa, scores, anoms)
 def get_latent(model, dataloader):
   model.eval()
   with torch.no_grad():
-    z = [model.encoder(x) for _, x in enumerate(dataloader)]
+    z = [model.forward(x) for _, x in enumerate(dataloader)]
     return z[0].cpu().numpy().astype(np.float64)
 
 z_train = get_latent(model, train_score_loader)

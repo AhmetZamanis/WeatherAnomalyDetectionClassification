@@ -94,7 +94,7 @@ class AutoEncoder(L.LightningModule):
   # Remember to manually put model into eval mode & disable grad when returning
   # z outside model training
   def forward(self, x):
-    z = self.encoder((x.view(x.size(0), -1)))
+    z = self.encoder(x) 
     return z
   
   # Define reconstruction loss function
@@ -175,3 +175,4 @@ class AutoEncoder(L.LightningModule):
 class OptunaPruning(PyTorchLightningPruningCallback, Callback):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+

@@ -23,7 +23,7 @@ Introduce data & source
 # Data handling
 import pandas as pd
 import numpy as np
-import arff
+import arff # Installed as liac-arff
 import warnings
 
 # Plotting
@@ -110,8 +110,8 @@ df["LOCAL_DATE"] = pd.to_datetime(df["LOCAL_DATE"])
 # Add cyclic terms for month, week of year and day of year
 df["month_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.month / 12)
 df["month_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.month / 12)
-df["week_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.week / 53)
-df["week_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.week / 53)
+df["week_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.isocalendar().week / 53)
+df["week_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.isocalendar().week / 53)
 df["day_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 df["day_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 
@@ -231,7 +231,7 @@ plot_anom3d("K-means scorer", ts_ottawa, anoms_kmeans)
 ```
 
 ```{python KMeansClustering}
-#| code-fold:true
+#| code-fold: true
 #| code-summary: "Show code for 3D clustering plot"
 
 # Clustering plot
@@ -352,7 +352,7 @@ plot_anom3d("ECOD scorer", ts_ottawa, anoms_ecod)
 # Special to scorer: Explain a single training point's outlier scoring
 idx_max_precip = np.argmax(
   ts_train['TOTAL_PRECIPITATION_OTTAWA'].univariate_values())
-scorer.model.explain_outlier(
+scorer_ecod.model.explain_outlier(
   ind = idx_max_precip, # Index of point to explain
   columns = [1, 2, 3, 4], # Dimensions to explain
   feature_names = ["MeanTemp", "TotalPrecip", "MonthSin", "MonthCos"])
@@ -500,7 +500,7 @@ fig = px.scatter_3d(
   x = z_pca[:, 0],
   y = z_pca[:, 1],
   z = z_pca[:, 2],
-  color = anoms.univariate_values().astype(str),
+  color = anoms_pca.univariate_values().astype(str),
   title = "PCA components plot, 3D T-SNE reduction",
   labels = {
     "x": "Dim1",
@@ -637,10 +637,7 @@ study_nn = optuna.create_study(
 obj = lambda trial: objective_nn(trial, train_loader, val_loader)
 
 # Optimize study
-study_nn.optimize(
-  obj,
-  n_trials = 500,
-  show_progress_bar = True)
+study_nn.optimize(obj, n_trials = 500, show_progress_bar = True)
 
 # Retrieve and export trials
 trials_nn = study_nn.trials_dataframe().sort_values("value", ascending = True)
@@ -763,7 +760,7 @@ plot_anom3d("Autoencoder scorer", ts_ottawa, anoms)
 def get_latent(model, dataloader):
   model.eval() # Put model into inference mode
   with torch.no_grad(): # Disable gradient calculation
-    z = [model.encoder(x) for _, x in enumerate(dataloader)]
+    z = [model.forward(x) for _, x in enumerate(dataloader)]
     return z[0].cpu().numpy().astype(np.float64)
 
 # Retrieve & concatenate latent space representations

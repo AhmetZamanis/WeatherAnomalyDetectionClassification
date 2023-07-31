@@ -25,7 +25,7 @@ plt.rcParams["figure.autolayout"] = True
 sns.set_style("darkgrid")
 
 
-# Load raw data
+# Load raw data (package liac-arff)
 raw_data = arff.load(open("./InputData/canadian_climate.arff", "r"))
 df = pd.DataFrame(raw_data["data"], columns = [x[0] for x in raw_data["attributes"]])
 
@@ -37,8 +37,8 @@ df["LOCAL_DATE"] = pd.to_datetime(df["LOCAL_DATE"])
 # Add cyclic terms for month, week of year and day of year
 df["month_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.month / 12)
 df["month_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.month / 12)
-df["week_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.week / 53)
-df["week_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.week / 53)
+df["week_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.isocalendar().week / 53)
+df["week_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.isocalendar().week / 53)
 df["day_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 df["day_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 

@@ -7,6 +7,7 @@ import plotly.express as px
 import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping
 from X_LightningClassesAnom import AutoEncoder, OptunaPruning
+from IPython.display import IFrame
 
 
 def score(ts_train, ts_test, scorer, scaler = None):
@@ -109,7 +110,8 @@ def plot_anom3d(scorer_name, ts, anoms, px_width, px_height, html = False):
   )
   
   if html:
-    fig.to_html(include_plotlyjs = "cdn")
+    fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
+    IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
   
   else:
     fig.show()

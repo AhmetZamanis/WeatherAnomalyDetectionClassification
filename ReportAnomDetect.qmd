@@ -30,6 +30,7 @@ import warnings
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
+from IPython.display import IFrame
 
 # Preprocessing
 from sklearn.preprocessing import MinMaxScaler
@@ -252,7 +253,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.to_html(include_plotlyjs = "cdn")
+fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
 
 ```
 
@@ -313,7 +315,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.to_html(include_plotlyjs = "cdn")
+fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
 
 ```
 
@@ -455,7 +458,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.to_html(include_plotlyjs = "cdn")
+fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
 
 
 # Principal components plot, PC3-4-5
@@ -473,7 +477,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.to_html(include_plotlyjs = "cdn")
+fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
 
 
 # # Principal components plot, last 3 PCs
@@ -491,7 +496,8 @@ fig.to_html(include_plotlyjs = "cdn")
 #     width = px_width,
 #     height = px_height
 # )
-# fig.to_html(include_plotlyjs = "cdn")
+# fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
+# IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
 
 ```
 
@@ -522,7 +528,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.to_html(include_plotlyjs = "cdn")
+fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
 
 ```
 
@@ -805,7 +812,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.to_html(include_plotlyjs = "cdn")
+fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
 
 ```
 

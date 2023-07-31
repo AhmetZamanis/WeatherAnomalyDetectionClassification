@@ -54,3 +54,9 @@ gp_edmonton_temp = model_gp.filter(ts_edmonton["MEAN_TEMPERATURE_EDMONTON"])
 # 
 # plt.show()
 # plt.close("all")
+
+
+# # To html and back
+# from IPython.display import IFrame
+# fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
+# IFrame(src="./HtmlPlot/plot.html", width=700, height=600)

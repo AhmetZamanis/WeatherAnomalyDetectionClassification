@@ -75,10 +75,11 @@ pd.options.display.float_format = '{:.4f}'.format
 pd.set_option('display.max_columns', None)
 
 # Set plotting options
-plt.rcParams['figure.dpi'] = 300
-plt.rcParams['savefig.dpi'] = 300
+plt.rcParams['figure.dpi'] = 150
 plt.rcParams["figure.autolayout"] = True
 sns.set_style("darkgrid")
+px_width = 600
+px_height = 600
 
 # Set Torch settings
 torch.set_default_dtype(torch.float32)
@@ -226,7 +227,7 @@ plot_dist("K-means scorer", scores_train_kmeans, scores_test_kmeans)
 ```{python KMeansPlot3D}
 
 # 3D anomalies plot
-plot_anom3d("K-means scorer", ts_ottawa, anoms_kmeans)
+plot_anom3d("K-means scorer", ts_ottawa, anoms_kmeans, px_width, px_height)
 
 ```
 
@@ -246,7 +247,9 @@ fig = px.scatter_3d(
     "x": "Mean temperature",
     "y": "Total precipitation",
     "z": "Month",
-    "color": "Clusters"}
+    "color": "Clusters"},
+    width = px_width,
+    height = px_height
 )
 fig.show()
 
@@ -290,7 +293,7 @@ plot_detection("GMM scores", q, ts_ottawa, scores_gmm, anoms_gmm)
 plot_dist("GMM scorer", scores_train_gmm, scores_test_gmm)
 
 # 3D anomalies plot
-plot_anom3d("GMM scorer", ts_ottawa, anoms_gmm)
+plot_anom3d("GMM scorer", ts_ottawa, anoms_gmm, px_width, px_height)
 
 # 3D cluster plot
 labels = scorer_gmm.model.detector_.predict(
@@ -305,7 +308,9 @@ fig = px.scatter_3d(
     "x": "Mean temperature",
     "y": "Total precipitation",
     "z": "Month",
-    "color": "Clusters"}
+    "color": "Clusters"},
+    width = px_width,
+    height = px_height
 )
 fig.show()
 
@@ -343,7 +348,7 @@ plot_detection("ECOD scores", q, ts_ottawa, scores_ecod, anoms_ecod)
 plot_dist("ECOD scorer", scores_train_ecod, scores_test_ecod)
 
 # 3D anomalies plot
-plot_anom3d("ECOD scorer", ts_ottawa, anoms_ecod)
+plot_anom3d("ECOD scorer", ts_ottawa, anoms_ecod, px_width, px_height)
 
 ```
 
@@ -392,7 +397,7 @@ plot_detection("PCA scores", q, ts_ottawa, scores_pca, anoms_pca)
 plot_dist("PCA scorer", scores_train_pca, scores_test_pca)
 
 # 3D anomalies plot
-plot_anom3d("PCA scorer", ts_ottawa, anoms_pca)
+plot_anom3d("PCA scorer", ts_ottawa, anoms_pca, px_width, px_height)
 
 ```
 
@@ -445,7 +450,9 @@ fig = px.scatter_3d(
     "x": "PC1",
     "y": "PC2",
     "z": "PC3",
-    "color": "Anomaly labels"}
+    "color": "Anomaly labels"},
+    width = px_width,
+    height = px_height
 )
 fig.show()
 
@@ -461,7 +468,9 @@ fig = px.scatter_3d(
     "x": "PC5",
     "y": "PC4",
     "z": "PC3",
-    "color": "Anomaly labels"}
+    "color": "Anomaly labels"},
+    width = px_width,
+    height = px_height
 )
 fig.show()
 
@@ -477,7 +486,9 @@ fig = px.scatter_3d(
     "x": "PC6",
     "y": "PC7",
     "z": "PC8",
-    "color": "Anomaly labels"}
+    "color": "Anomaly labels"},
+    width = px_width,
+    height = px_height
 )
 fig.show()
 
@@ -506,7 +517,9 @@ fig = px.scatter_3d(
     "x": "Dim1",
     "y": "Dim2",
     "z": "Dim3",
-    "color": "Anomaly labels"}
+    "color": "Anomaly labels"},
+    width = px_width,
+    height = px_height
 )
 fig.show()
 
@@ -548,7 +561,7 @@ plot_detection("IForest scores", q, ts_ottawa, scores_iforest, anoms_iforest)
 plot_dist("IForest scorer", scores_train_iforest, scores_test_iforest)
 
 # 3D anomalies plot
-plot_anom3d("IForest scorer", ts_ottawa, anoms_iforest)
+plot_anom3d("IForest scorer", ts_ottawa, anoms_iforest, px_width, px_height)
 
 ```
 
@@ -745,7 +758,7 @@ plot_detection("Autoencoder scores", q, ts_ottawa, scores, anoms)
 plot_dist("Autoencoder scorer", scores_train, scores_test)
 
 # 3D anomalies plot
-plot_anom3d("Autoencoder scorer", ts_ottawa, anoms)
+plot_anom3d("Autoencoder scorer", ts_ottawa, anoms, px_width, px_height)
 
 ```
 
@@ -785,7 +798,9 @@ fig = px.scatter_3d(
     "x": "Dim1",
     "y": "Dim2",
     "z": "Dim3",
-    "color": "Anomaly labels"}
+    "color": "Anomaly labels"},
+    width = px_width,
+    height = px_height
 )
 fig.show()
 

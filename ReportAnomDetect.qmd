@@ -78,8 +78,8 @@ pd.set_option('display.max_columns', None)
 plt.rcParams['figure.dpi'] = 150
 plt.rcParams["figure.autolayout"] = True
 sns.set_style("darkgrid")
-px_width = 600
-px_height = 600
+px_width = 800
+px_height = 800
 
 # Set Torch settings
 torch.set_default_dtype(torch.float32)
@@ -227,7 +227,8 @@ plot_dist("K-means scorer", scores_train_kmeans, scores_test_kmeans)
 ```{python KMeansPlot3D}
 
 # 3D anomalies plot
-plot_anom3d("K-means scorer", ts_ottawa, anoms_kmeans, px_width, px_height)
+plot_anom3d(
+  "K-means scorer", ts_ottawa, anoms_kmeans, px_width, px_height, html = True)
 
 ```
 
@@ -251,7 +252,7 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.show()
+fig.to_html(include_plotlyjs = "cdn")
 
 ```
 
@@ -293,7 +294,7 @@ plot_detection("GMM scores", q, ts_ottawa, scores_gmm, anoms_gmm)
 plot_dist("GMM scorer", scores_train_gmm, scores_test_gmm)
 
 # 3D anomalies plot
-plot_anom3d("GMM scorer", ts_ottawa, anoms_gmm, px_width, px_height)
+plot_anom3d("GMM scorer", ts_ottawa, anoms_gmm, px_width, px_height, html = True)
 
 # 3D cluster plot
 labels = scorer_gmm.model.detector_.predict(
@@ -312,7 +313,7 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.show()
+fig.to_html(include_plotlyjs = "cdn")
 
 ```
 
@@ -348,7 +349,7 @@ plot_detection("ECOD scores", q, ts_ottawa, scores_ecod, anoms_ecod)
 plot_dist("ECOD scorer", scores_train_ecod, scores_test_ecod)
 
 # 3D anomalies plot
-plot_anom3d("ECOD scorer", ts_ottawa, anoms_ecod, px_width, px_height)
+plot_anom3d("ECOD scorer", ts_ottawa, anoms_ecod, px_width, px_height, html = True)
 
 ```
 
@@ -397,7 +398,7 @@ plot_detection("PCA scores", q, ts_ottawa, scores_pca, anoms_pca)
 plot_dist("PCA scorer", scores_train_pca, scores_test_pca)
 
 # 3D anomalies plot
-plot_anom3d("PCA scorer", ts_ottawa, anoms_pca, px_width, px_height)
+plot_anom3d("PCA scorer", ts_ottawa, anoms_pca, px_width, px_height, html = True)
 
 ```
 
@@ -454,7 +455,7 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.show()
+fig.to_html(include_plotlyjs = "cdn")
 
 
 # Principal components plot, PC3-4-5
@@ -472,25 +473,25 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.show()
+fig.to_html(include_plotlyjs = "cdn")
 
 
-# Principal components plot, last 3 PCs
-fig = px.scatter_3d(
-  x = pcs[:, -1],
-  y = pcs[:, -2],
-  z = pcs[:, -3],
-  color = anoms_pca.univariate_values().astype(str),
-  title = "PCA components plot, last 3 PCs",
-  labels = {
-    "x": "PC6",
-    "y": "PC7",
-    "z": "PC8",
-    "color": "Anomaly labels"},
-    width = px_width,
-    height = px_height
-)
-fig.show()
+# # Principal components plot, last 3 PCs
+# fig = px.scatter_3d(
+#   x = pcs[:, -1],
+#   y = pcs[:, -2],
+#   z = pcs[:, -3],
+#   color = anoms_pca.univariate_values().astype(str),
+#   title = "PCA components plot, last 3 PCs",
+#   labels = {
+#     "x": "PC6",
+#     "y": "PC7",
+#     "z": "PC8",
+#     "color": "Anomaly labels"},
+#     width = px_width,
+#     height = px_height
+# )
+# fig.to_html(include_plotlyjs = "cdn")
 
 ```
 
@@ -521,7 +522,7 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.show()
+fig.to_html(include_plotlyjs = "cdn")
 
 ```
 
@@ -561,7 +562,8 @@ plot_detection("IForest scores", q, ts_ottawa, scores_iforest, anoms_iforest)
 plot_dist("IForest scorer", scores_train_iforest, scores_test_iforest)
 
 # 3D anomalies plot
-plot_anom3d("IForest scorer", ts_ottawa, anoms_iforest, px_width, px_height)
+plot_anom3d(
+  "IForest scorer", ts_ottawa, anoms_iforest, px_width, px_height, html = True)
 
 ```
 
@@ -758,7 +760,8 @@ plot_detection("Autoencoder scores", q, ts_ottawa, scores, anoms)
 plot_dist("Autoencoder scorer", scores_train, scores_test)
 
 # 3D anomalies plot
-plot_anom3d("Autoencoder scorer", ts_ottawa, anoms, px_width, px_height)
+plot_anom3d(
+  "Autoencoder scorer", ts_ottawa, anoms, px_width, px_height, html = True)
 
 ```
 
@@ -802,7 +805,7 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.show()
+fig.to_html(include_plotlyjs = "cdn")
 
 ```
 

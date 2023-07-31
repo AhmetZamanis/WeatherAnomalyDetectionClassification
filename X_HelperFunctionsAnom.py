@@ -88,7 +88,7 @@ def plot_dist(scorer_name, scores_train, scores_test):
   plt.close("all")
 
 
-def plot_anom3d(scorer_name, ts, anoms):
+def plot_anom3d(scorer_name, ts, anoms, px_width, px_height, html = False):
   """
   Plot 3D scatterplot of anomalies.
   """
@@ -103,9 +103,16 @@ def plot_anom3d(scorer_name, ts, anoms):
     "x": "Mean temperature",
     "y": "Total precipitation",
     "z": "Month",
-    "color": "Anomaly labels"}
+    "color": "Anomaly labels"},
+    width = px_width,
+    height = px_height
   )
-  fig.show()
+  
+  if html:
+    fig.to_html(include_plotlyjs = "cdn")
+  
+  else:
+    fig.show()
 
 
 def plot_detection(scores_name, quantile, ts, scores, anoms):

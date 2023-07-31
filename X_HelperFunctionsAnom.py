@@ -110,8 +110,9 @@ def plot_anom3d(scorer_name, ts, anoms, px_width, px_height, html = False):
   )
   
   if html:
-    fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-    IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+    filename = "./HtmlPlots/" + scorer_name + "_anoms.html"
+    fig.write_html(filename, include_plotlyjs = "cdn")
+    IFrame(src=filename, width=px_width, height=px_height)
   
   else:
     fig.show()

@@ -100,7 +100,7 @@ raw_data = arff.load(open("./InputData/canadian_climate.arff", "r"))
 # Convert to Pandas dataframe & view
 df = pd.DataFrame(
   raw_data["data"], columns = [x[0] for x in raw_data["attributes"]])
-print(df)
+print(df.iloc[:,0:4])
 
 ```
 
@@ -146,7 +146,7 @@ ts_covars = TimeSeries.from_dataframe(
   'day_cos'],
   fill_missing_dates = True
 )
-ts_covars
+print(ts_covars)
 
 ```
 
@@ -190,7 +190,7 @@ scorer_kmeans = KMeansScorer(
 # Perform anomaly scoring
 scores_train_kmeans, scores_test_kmeans, scores_kmeans = score(
   ts_train, ts_test, scorer_kmeans, scaler)
-scores_kmeans
+print(scores_kmeans)
 
 ```
 
@@ -199,7 +199,7 @@ scores_kmeans
 # Perform anomaly detection
 anoms_train_kmeans, anoms_test_kmeans, anoms_kmeans = detect(
   scores_train_kmeans, scores_test_kmeans, detector)
-anoms_kmeans
+print(anoms_kmeans)
 
 ```
 
@@ -253,8 +253,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/ClustKMeans.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/ClustKMeans.html", width=px_width, height=px_height)
 
 ```
 
@@ -315,8 +315,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/ClustGMM.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/ClustGMM.html", width=px_width, height=px_height)
 
 ```
 
@@ -458,8 +458,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/PCS1.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/PCS1.html", width=px_width, height=px_height)
 
 
 # Principal components plot, PC3-4-5
@@ -477,8 +477,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/PCS2.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/PCS2.html", width=px_width, height=px_height)
 
 
 # # Principal components plot, last 3 PCs
@@ -528,8 +528,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/TSNE1.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/TSNE1.html", width=px_width, height=px_height)
 
 ```
 
@@ -812,8 +812,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/TSNE2.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/TSNE2.html", width=px_width, height=px_height)
 
 ```
 

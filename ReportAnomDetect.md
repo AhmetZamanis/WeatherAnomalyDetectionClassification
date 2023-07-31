@@ -112,7 +112,7 @@ raw_data = arff.load(open("./InputData/canadian_climate.arff", "r"))
 # Convert to Pandas dataframe & view
 df = pd.DataFrame(
   raw_data["data"], columns = [x[0] for x in raw_data["attributes"]])
-print(df)
+print(df.iloc[:,0:4])
 ```
 
                      LOCAL_DATE  MEAN_TEMPERATURE_CALGARY  \
@@ -128,176 +128,20 @@ print(df)
     29219  31-Dec-2019 00:00:00                    4.3000   
     29220  01-Jan-2020 00:00:00                   -0.3000   
 
-           TOTAL_PRECIPITATION_CALGARY  MEAN_TEMPERATURE_EDMONTON  \
-    0                           0.5000                        NaN   
-    1                           0.5000                        NaN   
-    2                           1.0000                        NaN   
-    3                           0.8000                        NaN   
-    4                           0.5000                        NaN   
-    ...                            ...                        ...   
-    29216                       0.0000                   -10.4000   
-    29217                       0.0000                    -8.6000   
-    29218                       0.0000                   -10.3000   
-    29219                       0.0000                    -2.6000   
-    29220                       0.0000                    -4.0000   
+           TOTAL_PRECIPITATION_CALGARY  MEAN_TEMPERATURE_EDMONTON  
+    0                           0.5000                        NaN  
+    1                           0.5000                        NaN  
+    2                           1.0000                        NaN  
+    3                           0.8000                        NaN  
+    4                           0.5000                        NaN  
+    ...                            ...                        ...  
+    29216                       0.0000                   -10.4000  
+    29217                       0.0000                    -8.6000  
+    29218                       0.0000                   -10.3000  
+    29219                       0.0000                    -2.6000  
+    29220                       0.0000                    -4.0000  
 
-           TOTAL_PRECIPITATION_EDMONTON  MEAN_TEMPERATURE_HALIFAX  \
-    0                               NaN                       NaN   
-    1                               NaN                       NaN   
-    2                               NaN                       NaN   
-    3                               NaN                       NaN   
-    4                               NaN                       NaN   
-    ...                             ...                       ...   
-    29216                        0.0000                    2.1000   
-    29217                        0.0000                   -2.7000   
-    29218                        0.0000                   -3.5000   
-    29219                        0.0000                    0.0000   
-    29220                        0.0000                    1.8000   
-
-           TOTAL_PRECIPITATION_HALIFAX  MEAN_TEMPERATURE_MONCTON  \
-    0                              NaN                   -8.9000   
-    1                              NaN                  -14.5000   
-    2                              NaN                  -11.1000   
-    3                              NaN                  -11.1000   
-    4                              NaN                   -8.1000   
-    ...                            ...                       ...   
-    29216                       0.0000                    0.5000   
-    29217                       0.0000                   -3.8000   
-    29218                       0.0000                   -4.1000   
-    29219                      11.4000                   -1.0000   
-    29220                       0.4000                    0.2000   
-
-           TOTAL_PRECIPITATION_MONCTON  MEAN_TEMPERATURE_MONTREAL  \
-    0                           0.0000                        NaN   
-    1                           0.0000                        NaN   
-    2                           0.0000                        NaN   
-    3                           0.3000                        NaN   
-    4                           0.0000                        NaN   
-    ...                            ...                        ...   
-    29216                          NaN                     1.3000   
-    29217                          NaN                    -0.9000   
-    29218                          NaN                    -2.3000   
-    29219                          NaN                    -0.2000   
-    29220                          NaN                     0.2000   
-
-           TOTAL_PRECIPITATION_MONTREAL  MEAN_TEMPERATURE_OTTAWA  \
-    0                               NaN                 -17.0000   
-    1                               NaN                 -16.7000   
-    2                               NaN                 -12.3000   
-    3                               NaN                 -16.4000   
-    4                               NaN                 -19.5000   
-    ...                             ...                      ...   
-    29216                        0.0000                  -0.5000   
-    29217                        0.0000                  -3.4000   
-    29218                       13.4000                  -2.7000   
-    29219                       11.4000                  -0.7000   
-    29220                        0.9000                  -0.5000   
-
-           TOTAL_PRECIPITATION_OTTAWA  MEAN_TEMPERATURE_QUEBEC  \
-    0                          0.0000                      NaN   
-    1                          0.5000                      NaN   
-    2                          0.0000                      NaN   
-    3                          0.0000                      NaN   
-    4                          0.0000                      NaN   
-    ...                           ...                      ...   
-    29216                      0.0000                  -0.5000   
-    29217                      0.8000                  -4.9000   
-    29218                     12.7000                  -5.7000   
-    29219                      6.6000                  -3.5000   
-    29220                      0.0000                  -2.8000   
-
-           TOTAL_PRECIPITATION_QUEBEC  MEAN_TEMPERATURE_SASKATOON  \
-    0                             NaN                    -25.6000   
-    1                             NaN                    -20.9000   
-    2                             NaN                    -26.4000   
-    3                             NaN                    -32.5000   
-    4                             NaN                    -26.2000   
-    ...                           ...                         ...   
-    29216                      0.3000                    -15.3000   
-    29217                      0.0000                    -15.6000   
-    29218                      2.7000                    -15.0000   
-    29219                      8.2000                     -8.2000   
-    29220                      1.5000                     -7.9000   
-
-           TOTAL_PRECIPITATION_SASKATOON  MEAN_TEMPERATURE_STJOHNS  \
-    0                             0.0000                       NaN   
-    1                             0.0000                       NaN   
-    2                             0.0000                       NaN   
-    3                             0.0000                       NaN   
-    4                             0.0000                       NaN   
-    ...                              ...                       ...   
-    29216                            NaN                   -4.3000   
-    29217                            NaN                   -0.9000   
-    29218                            NaN                   -0.7000   
-    29219                            NaN                   -1.2000   
-    29220                            NaN                   -0.4000   
-
-           TOTAL_PRECIPITATION_STJOHNS  MEAN_TEMPERATURE_TORONTO  \
-    0                              NaN                   -8.9000   
-    1                              NaN                  -13.1000   
-    2                              NaN                   -6.1000   
-    3                              NaN                   -6.4000   
-    4                              NaN                   -7.2000   
-    ...                            ...                       ...   
-    29216                       5.3000                    3.0000   
-    29217                       5.6000                    1.1000   
-    29218                       0.7000                    5.6000   
-    29219                       0.0000                    0.4000   
-    29220                       6.4000                   -1.7000   
-
-           TOTAL_PRECIPITATION_TORONTO  MEAN_TEMPERATURE_VANCOUVER  \
-    0                           0.0000                      8.9000   
-    1                           0.3000                      9.7000   
-    2                           0.0000                      7.8000   
-    3                           0.5000                      8.1000   
-    4                          16.5000                      7.0000   
-    ...                            ...                         ...   
-    29216                       0.2000                      5.3000   
-    29217                       7.8000                      7.1000   
-    29218                       8.0000                      7.5000   
-    29219                       2.0000                      8.4000   
-    29220                       0.0000                      7.8000   
-
-           TOTAL_PRECIPITATION_VANCOUVER  MEAN_TEMPERATURE_WHITEHORSE  \
-    0                             5.8000                          NaN   
-    1                             7.1000                          NaN   
-    2                             1.0000                          NaN   
-    3                             0.5000                          NaN   
-    4                             0.8000                          NaN   
-    ...                              ...                          ...   
-    29216                         3.0000                      -9.0000   
-    29217                         2.4000                      -2.8000   
-    29218                         5.8000                      -0.1000   
-    29219                        21.2000                      -1.1000   
-    29220                         0.8000                      -4.2000   
-
-           TOTAL_PRECIPITATION_WHITEHORSE  MEAN_TEMPERATURE_WINNIPEG  \
-    0                                 NaN                   -20.9000   
-    1                                 NaN                   -18.4000   
-    2                                 NaN                   -22.0000   
-    3                                 NaN                   -20.3000   
-    4                                 NaN                   -18.7000   
-    ...                               ...                        ...   
-    29216                             NaN                    -4.7000   
-    29217                             NaN                   -10.6000   
-    29218                             NaN                   -10.9000   
-    29219                             NaN                   -12.3000   
-    29220                             NaN                    -7.0000   
-
-           TOTAL_PRECIPITATION_WINNIPEG  
-    0                            0.0000  
-    1                            0.0000  
-    2                            0.0000  
-    3                            0.0000  
-    4                            0.0000  
-    ...                             ...  
-    29216                        0.0000  
-    29217                        1.7000  
-    29218                        0.1000  
-    29219                        0.0000  
-    29220                        0.0000  
-
-    [29221 rows x 27 columns]
+    [29221 rows x 4 columns]
 
 ``` python
 # Convert LOCAL_DATE to datetime
@@ -336,472 +180,58 @@ ts_covars = TimeSeries.from_dataframe(
   'day_cos'],
   fill_missing_dates = True
 )
-ts_covars
+print(ts_covars)
 ```
 
-<div><svg style="position: absolute; width: 0; height: 0; overflow: hidden">
-<defs>
-<symbol id="icon-database" viewBox="0 0 32 32">
-<path d="M16 0c-8.837 0-16 2.239-16 5v4c0 2.761 7.163 5 16 5s16-2.239 16-5v-4c0-2.761-7.163-5-16-5z"></path>
-<path d="M16 17c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
-<path d="M16 26c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
-</symbol>
-<symbol id="icon-file-text2" viewBox="0 0 32 32">
-<path d="M28.681 7.159c-0.694-0.947-1.662-2.053-2.724-3.116s-2.169-2.030-3.116-2.724c-1.612-1.182-2.393-1.319-2.841-1.319h-15.5c-1.378 0-2.5 1.121-2.5 2.5v27c0 1.378 1.122 2.5 2.5 2.5h23c1.378 0 2.5-1.122 2.5-2.5v-19.5c0-0.448-0.137-1.23-1.319-2.841zM24.543 5.457c0.959 0.959 1.712 1.825 2.268 2.543h-4.811v-4.811c0.718 0.556 1.584 1.309 2.543 2.268zM28 29.5c0 0.271-0.229 0.5-0.5 0.5h-23c-0.271 0-0.5-0.229-0.5-0.5v-27c0-0.271 0.229-0.5 0.5-0.5 0 0 15.499-0 15.5 0v7c0 0.552 0.448 1 1 1h7v19.5z"></path>
-<path d="M23 26h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-<path d="M23 22h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-<path d="M23 18h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-</symbol>
-</defs>
-</svg>
-<style>/* CSS stylesheet for displaying xarray objects in jupyterlab.
- *
- */
-
-:root {
-  --xr-font-color0: var(--jp-content-font-color0, rgba(0, 0, 0, 1));
-  --xr-font-color2: var(--jp-content-font-color2, rgba(0, 0, 0, 0.54));
-  --xr-font-color3: var(--jp-content-font-color3, rgba(0, 0, 0, 0.38));
-  --xr-border-color: var(--jp-border-color2, #e0e0e0);
-  --xr-disabled-color: var(--jp-layout-color3, #bdbdbd);
-  --xr-background-color: var(--jp-layout-color0, white);
-  --xr-background-color-row-even: var(--jp-layout-color1, white);
-  --xr-background-color-row-odd: var(--jp-layout-color2, #eeeeee);
-}
-
-html[theme=dark],
-body[data-theme=dark],
-body.vscode-dark {
-  --xr-font-color0: rgba(255, 255, 255, 1);
-  --xr-font-color2: rgba(255, 255, 255, 0.54);
-  --xr-font-color3: rgba(255, 255, 255, 0.38);
-  --xr-border-color: #1F1F1F;
-  --xr-disabled-color: #515151;
-  --xr-background-color: #111111;
-  --xr-background-color-row-even: #111111;
-  --xr-background-color-row-odd: #313131;
-}
-
-.xr-wrap {
-  display: block !important;
-  min-width: 300px;
-  max-width: 700px;
-}
-
-.xr-text-repr-fallback {
-  /* fallback to plain text repr when CSS is not injected (untrusted notebook) */
-  display: none;
-}
-
-.xr-header {
-  padding-top: 6px;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  border-bottom: solid 1px var(--xr-border-color);
-}
-
-.xr-header > div,
-.xr-header > ul {
-  display: inline;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.xr-obj-type,
-.xr-array-name {
-  margin-left: 2px;
-  margin-right: 10px;
-}
-
-.xr-obj-type {
-  color: var(--xr-font-color2);
-}
-
-.xr-sections {
-  padding-left: 0 !important;
-  display: grid;
-  grid-template-columns: 150px auto auto 1fr 20px 20px;
-}
-
-.xr-section-item {
-  display: contents;
-}
-
-.xr-section-item input {
-  display: none;
-}
-
-.xr-section-item input + label {
-  color: var(--xr-disabled-color);
-}
-
-.xr-section-item input:enabled + label {
-  cursor: pointer;
-  color: var(--xr-font-color2);
-}
-
-.xr-section-item input:enabled + label:hover {
-  color: var(--xr-font-color0);
-}
-
-.xr-section-summary {
-  grid-column: 1;
-  color: var(--xr-font-color2);
-  font-weight: 500;
-}
-
-.xr-section-summary > span {
-  display: inline-block;
-  padding-left: 0.5em;
-}
-
-.xr-section-summary-in:disabled + label {
-  color: var(--xr-font-color2);
-}
-
-.xr-section-summary-in + label:before {
-  display: inline-block;
-  content: '►';
-  font-size: 11px;
-  width: 15px;
-  text-align: center;
-}
-
-.xr-section-summary-in:disabled + label:before {
-  color: var(--xr-disabled-color);
-}
-
-.xr-section-summary-in:checked + label:before {
-  content: '▼';
-}
-
-.xr-section-summary-in:checked + label > span {
-  display: none;
-}
-
-.xr-section-summary,
-.xr-section-inline-details {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-.xr-section-inline-details {
-  grid-column: 2 / -1;
-}
-
-.xr-section-details {
-  display: none;
-  grid-column: 1 / -1;
-  margin-bottom: 5px;
-}
-
-.xr-section-summary-in:checked ~ .xr-section-details {
-  display: contents;
-}
-
-.xr-array-wrap {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 20px auto;
-}
-
-.xr-array-wrap > label {
-  grid-column: 1;
-  vertical-align: top;
-}
-
-.xr-preview {
-  color: var(--xr-font-color3);
-}
-
-.xr-array-preview,
-.xr-array-data {
-  padding: 0 5px !important;
-  grid-column: 2;
-}
-
-.xr-array-data,
-.xr-array-in:checked ~ .xr-array-preview {
-  display: none;
-}
-
-.xr-array-in:checked ~ .xr-array-data,
-.xr-array-preview {
-  display: inline-block;
-}
-
-.xr-dim-list {
-  display: inline-block !important;
-  list-style: none;
-  padding: 0 !important;
-  margin: 0;
-}
-
-.xr-dim-list li {
-  display: inline-block;
-  padding: 0;
-  margin: 0;
-}
-
-.xr-dim-list:before {
-  content: '(';
-}
-
-.xr-dim-list:after {
-  content: ')';
-}
-
-.xr-dim-list li:not(:last-child):after {
-  content: ',';
-  padding-right: 5px;
-}
-
-.xr-has-index {
-  font-weight: bold;
-}
-
-.xr-var-list,
-.xr-var-item {
-  display: contents;
-}
-
-.xr-var-item > div,
-.xr-var-item label,
-.xr-var-item > .xr-var-name span {
-  background-color: var(--xr-background-color-row-even);
-  margin-bottom: 0;
-}
-
-.xr-var-item > .xr-var-name:hover span {
-  padding-right: 5px;
-}
-
-.xr-var-list > li:nth-child(odd) > div,
-.xr-var-list > li:nth-child(odd) > label,
-.xr-var-list > li:nth-child(odd) > .xr-var-name span {
-  background-color: var(--xr-background-color-row-odd);
-}
-
-.xr-var-name {
-  grid-column: 1;
-}
-
-.xr-var-dims {
-  grid-column: 2;
-}
-
-.xr-var-dtype {
-  grid-column: 3;
-  text-align: right;
-  color: var(--xr-font-color2);
-}
-
-.xr-var-preview {
-  grid-column: 4;
-}
-
-.xr-index-preview {
-  grid-column: 2 / 5;
-  color: var(--xr-font-color2);
-}
-
-.xr-var-name,
-.xr-var-dims,
-.xr-var-dtype,
-.xr-preview,
-.xr-attrs dt {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: 10px;
-}
-
-.xr-var-name:hover,
-.xr-var-dims:hover,
-.xr-var-dtype:hover,
-.xr-attrs dt:hover {
-  overflow: visible;
-  width: auto;
-  z-index: 1;
-}
-
-.xr-var-attrs,
-.xr-var-data,
-.xr-index-data {
-  display: none;
-  background-color: var(--xr-background-color) !important;
-  padding-bottom: 5px !important;
-}
-
-.xr-var-attrs-in:checked ~ .xr-var-attrs,
-.xr-var-data-in:checked ~ .xr-var-data,
-.xr-index-data-in:checked ~ .xr-index-data {
-  display: block;
-}
-
-.xr-var-data > table {
-  float: right;
-}
-
-.xr-var-name span,
-.xr-var-data,
-.xr-index-name div,
-.xr-index-data,
-.xr-attrs {
-  padding-left: 25px !important;
-}
-
-.xr-attrs,
-.xr-var-attrs,
-.xr-var-data,
-.xr-index-data {
-  grid-column: 1 / -1;
-}
-
-dl.xr-attrs {
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: 125px auto;
-}
-
-.xr-attrs dt,
-.xr-attrs dd {
-  padding: 0;
-  margin: 0;
-  float: left;
-  padding-right: 10px;
-  width: auto;
-}
-
-.xr-attrs dt {
-  font-weight: normal;
-  grid-column: 1;
-}
-
-.xr-attrs dt:hover span {
-  display: inline-block;
-  background: var(--xr-background-color);
-  padding-right: 10px;
-}
-
-.xr-attrs dd {
-  grid-column: 2;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.xr-icon-database,
-.xr-icon-file-text2,
-.xr-no-icon {
-  display: inline-block;
-  vertical-align: middle;
-  width: 1em;
-  height: 1.5em !important;
-  stroke-width: 0;
-  stroke: currentColor;
-  fill: currentColor;
-}
-</style><pre class='xr-text-repr-fallback'>&lt;TimeSeries (DataArray) (LOCAL_DATE: 29221, component: 6, sample: 1)&gt;
-array([[[ 0.5   ],
-        [ 0.866 ],
-        [ 0.1183],
-        [ 0.993 ],
-        [ 0.0172],
-        [ 0.9999]],
-
-       [[ 0.5   ],
-        [ 0.866 ],
-        [ 0.1183],
-        [ 0.993 ],
-        [ 0.0343],
-        [ 0.9994]],
-
-       [[ 0.5   ],
-        [ 0.866 ],
-        [ 0.1183],
-        [ 0.993 ],
-        [ 0.0515],
-        [ 0.9987]],
-...
-       [[-0.    ],
-        [ 1.    ],
-        [ 0.1183],
-        [ 0.993 ],
-        [-0.0343],
-        [ 0.9994]],
-
-       [[-0.    ],
-        [ 1.    ],
-        [ 0.1183],
-        [ 0.993 ],
-        [-0.0172],
-        [ 0.9999]],
-
-       [[ 0.5   ],
-        [ 0.866 ],
-        [ 0.1183],
-        [ 0.993 ],
-        [ 0.0172],
-        [ 0.9999]]])
-Coordinates:
-  * LOCAL_DATE  (LOCAL_DATE) datetime64[ns] 1940-01-01 1940-01-02 ... 2020-01-01
-  * component   (component) object &#x27;month_sin&#x27; &#x27;month_cos&#x27; ... &#x27;day_cos&#x27;
-Dimensions without coordinates: sample
-Attributes:
-    static_covariates:  None
-    hierarchy:          None</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>TimeSeries (DataArray)</div><div class='xr-array-name'></div><ul class='xr-dim-list'><li><span class='xr-has-index'>LOCAL_DATE</span>: 29221</li><li><span class='xr-has-index'>component</span>: 6</li><li><span>sample</span>: 1</li></ul></div><ul class='xr-sections'><li class='xr-section-item'><div class='xr-array-wrap'><input id='section-91c104f7-c0ce-4be8-8634-411fe6dbadc6' class='xr-array-in' type='checkbox' checked><label for='section-91c104f7-c0ce-4be8-8634-411fe6dbadc6' title='Show/hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-array-preview xr-preview'><span>0.5 0.866 0.1183 0.993 0.01717 ... 0.866 0.1183 0.993 0.01717 0.9999</span></div><div class='xr-array-data'><pre>array([[[ 0.5   ],
-        [ 0.866 ],
-        [ 0.1183],
-        [ 0.993 ],
-        [ 0.0172],
-        [ 0.9999]],
-
-       [[ 0.5   ],
-        [ 0.866 ],
-        [ 0.1183],
-        [ 0.993 ],
-        [ 0.0343],
-        [ 0.9994]],
-
-       [[ 0.5   ],
-        [ 0.866 ],
-        [ 0.1183],
-        [ 0.993 ],
-        [ 0.0515],
-        [ 0.9987]],
-...
-       [[-0.    ],
-        [ 1.    ],
-        [ 0.1183],
-        [ 0.993 ],
-        [-0.0343],
-        [ 0.9994]],
-
-       [[-0.    ],
-        [ 1.    ],
-        [ 0.1183],
-        [ 0.993 ],
-        [-0.0172],
-        [ 0.9999]],
-
-       [[ 0.5   ],
-        [ 0.866 ],
-        [ 0.1183],
-        [ 0.993 ],
-        [ 0.0172],
-        [ 0.9999]]])</pre></div></div></li><li class='xr-section-item'><input id='section-1eb923d7-ee2b-43ad-b98b-eae8f04d4eab' class='xr-section-summary-in' type='checkbox'  checked><label for='section-1eb923d7-ee2b-43ad-b98b-eae8f04d4eab' class='xr-section-summary' >Coordinates: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>LOCAL_DATE</span></div><div class='xr-var-dims'>(LOCAL_DATE)</div><div class='xr-var-dtype'>datetime64[ns]</div><div class='xr-var-preview xr-preview'>1940-01-01 ... 2020-01-01</div><input id='attrs-65bb2334-406b-4fb8-87e5-73d77ef38355' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-65bb2334-406b-4fb8-87e5-73d77ef38355' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-6fc9b04b-c7f7-4211-9009-5e05697734ec' class='xr-var-data-in' type='checkbox'><label for='data-6fc9b04b-c7f7-4211-9009-5e05697734ec' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;1940-01-01T00:00:00.000000000&#x27;, &#x27;1940-01-02T00:00:00.000000000&#x27;,
-       &#x27;1940-01-03T00:00:00.000000000&#x27;, ..., &#x27;2019-12-30T00:00:00.000000000&#x27;,
-       &#x27;2019-12-31T00:00:00.000000000&#x27;, &#x27;2020-01-01T00:00:00.000000000&#x27;],
-      dtype=&#x27;datetime64[ns]&#x27;)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>component</span></div><div class='xr-var-dims'>(component)</div><div class='xr-var-dtype'>object</div><div class='xr-var-preview xr-preview'>&#x27;month_sin&#x27; ... &#x27;day_cos&#x27;</div><input id='attrs-95969b97-690c-4508-a1f9-7b757f8d76d3' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-95969b97-690c-4508-a1f9-7b757f8d76d3' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-22a2fe58-d64f-41dc-b40d-73c7487c0ab9' class='xr-var-data-in' type='checkbox'><label for='data-22a2fe58-d64f-41dc-b40d-73c7487c0ab9' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;month_sin&#x27;, &#x27;month_cos&#x27;, &#x27;week_sin&#x27;, &#x27;week_cos&#x27;, &#x27;day_sin&#x27;, &#x27;day_cos&#x27;],
-      dtype=object)</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-f45a4dd4-728a-4940-b5b7-ba9ef56323ef' class='xr-section-summary-in' type='checkbox'  ><label for='section-f45a4dd4-728a-4940-b5b7-ba9ef56323ef' class='xr-section-summary' >Indexes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-index-name'><div>LOCAL_DATE</div></div><div class='xr-index-preview'>PandasIndex</div><div></div><input id='index-6bbc511a-47e4-4622-85cf-02ce11f37cac' class='xr-index-data-in' type='checkbox'/><label for='index-6bbc511a-47e4-4622-85cf-02ce11f37cac' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(DatetimeIndex([&#x27;1940-01-01&#x27;, &#x27;1940-01-02&#x27;, &#x27;1940-01-03&#x27;, &#x27;1940-01-04&#x27;,
-               &#x27;1940-01-05&#x27;, &#x27;1940-01-06&#x27;, &#x27;1940-01-07&#x27;, &#x27;1940-01-08&#x27;,
-               &#x27;1940-01-09&#x27;, &#x27;1940-01-10&#x27;,
-               ...
-               &#x27;2019-12-23&#x27;, &#x27;2019-12-24&#x27;, &#x27;2019-12-25&#x27;, &#x27;2019-12-26&#x27;,
-               &#x27;2019-12-27&#x27;, &#x27;2019-12-28&#x27;, &#x27;2019-12-29&#x27;, &#x27;2019-12-30&#x27;,
-               &#x27;2019-12-31&#x27;, &#x27;2020-01-01&#x27;],
-              dtype=&#x27;datetime64[ns]&#x27;, name=&#x27;LOCAL_DATE&#x27;, length=29221, freq=&#x27;D&#x27;))</pre></div></li><li class='xr-var-item'><div class='xr-index-name'><div>component</div></div><div class='xr-index-preview'>PandasIndex</div><div></div><input id='index-caaae220-73f4-45a9-a4c0-e084c4ce7148' class='xr-index-data-in' type='checkbox'/><label for='index-caaae220-73f4-45a9-a4c0-e084c4ce7148' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([&#x27;month_sin&#x27;, &#x27;month_cos&#x27;, &#x27;week_sin&#x27;, &#x27;week_cos&#x27;, &#x27;day_sin&#x27;, &#x27;day_cos&#x27;], dtype=&#x27;object&#x27;, name=&#x27;component&#x27;))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-8b6ed65c-f836-4190-b66d-aabbcec0bbd5' class='xr-section-summary-in' type='checkbox'  checked><label for='section-8b6ed65c-f836-4190-b66d-aabbcec0bbd5' class='xr-section-summary' >Attributes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'><dt><span>static_covariates :</span></dt><dd>None</dd><dt><span>hierarchy :</span></dt><dd>None</dd></dl></div></li></ul></div></div>
+    <TimeSeries (DataArray) (LOCAL_DATE: 29221, component: 6, sample: 1)>
+    array([[[ 0.5   ],
+            [ 0.866 ],
+            [ 0.1183],
+            [ 0.993 ],
+            [ 0.0172],
+            [ 0.9999]],
+
+           [[ 0.5   ],
+            [ 0.866 ],
+            [ 0.1183],
+            [ 0.993 ],
+            [ 0.0343],
+            [ 0.9994]],
+
+           [[ 0.5   ],
+            [ 0.866 ],
+            [ 0.1183],
+            [ 0.993 ],
+            [ 0.0515],
+            [ 0.9987]],
+    ...
+           [[-0.    ],
+            [ 1.    ],
+            [ 0.1183],
+            [ 0.993 ],
+            [-0.0343],
+            [ 0.9994]],
+
+           [[-0.    ],
+            [ 1.    ],
+            [ 0.1183],
+            [ 0.993 ],
+            [-0.0172],
+            [ 0.9999]],
+
+           [[ 0.5   ],
+            [ 0.866 ],
+            [ 0.1183],
+            [ 0.993 ],
+            [ 0.0172],
+            [ 0.9999]]])
+    Coordinates:
+      * LOCAL_DATE  (LOCAL_DATE) datetime64[ns] 1940-01-01 1940-01-02 ... 2020-01-01
+      * component   (component) object 'month_sin' 'month_cos' ... 'day_cos'
+    Dimensions without coordinates: sample
+    Attributes:
+        static_covariates:  None
+        hierarchy:          None
 
 ``` python
 # Concatenate time covariates to Ottawa weather series
@@ -838,829 +268,59 @@ scorer_kmeans = KMeansScorer(
 # Perform anomaly scoring
 scores_train_kmeans, scores_test_kmeans, scores_kmeans = score(
   ts_train, ts_test, scorer_kmeans, scaler)
-scores_kmeans
+print(scores_kmeans)
 ```
 
-<div><svg style="position: absolute; width: 0; height: 0; overflow: hidden">
-<defs>
-<symbol id="icon-database" viewBox="0 0 32 32">
-<path d="M16 0c-8.837 0-16 2.239-16 5v4c0 2.761 7.163 5 16 5s16-2.239 16-5v-4c0-2.761-7.163-5-16-5z"></path>
-<path d="M16 17c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
-<path d="M16 26c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
-</symbol>
-<symbol id="icon-file-text2" viewBox="0 0 32 32">
-<path d="M28.681 7.159c-0.694-0.947-1.662-2.053-2.724-3.116s-2.169-2.030-3.116-2.724c-1.612-1.182-2.393-1.319-2.841-1.319h-15.5c-1.378 0-2.5 1.121-2.5 2.5v27c0 1.378 1.122 2.5 2.5 2.5h23c1.378 0 2.5-1.122 2.5-2.5v-19.5c0-0.448-0.137-1.23-1.319-2.841zM24.543 5.457c0.959 0.959 1.712 1.825 2.268 2.543h-4.811v-4.811c0.718 0.556 1.584 1.309 2.543 2.268zM28 29.5c0 0.271-0.229 0.5-0.5 0.5h-23c-0.271 0-0.5-0.229-0.5-0.5v-27c0-0.271 0.229-0.5 0.5-0.5 0 0 15.499-0 15.5 0v7c0 0.552 0.448 1 1 1h7v19.5z"></path>
-<path d="M23 26h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-<path d="M23 22h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-<path d="M23 18h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-</symbol>
-</defs>
-</svg>
-<style>/* CSS stylesheet for displaying xarray objects in jupyterlab.
- *
- */
+    <TimeSeries (DataArray) (LOCAL_DATE: 29221, component: 1, sample: 1)>
+    array([[[0.3829]],
 
-:root {
-  --xr-font-color0: var(--jp-content-font-color0, rgba(0, 0, 0, 1));
-  --xr-font-color2: var(--jp-content-font-color2, rgba(0, 0, 0, 0.54));
-  --xr-font-color3: var(--jp-content-font-color3, rgba(0, 0, 0, 0.38));
-  --xr-border-color: var(--jp-border-color2, #e0e0e0);
-  --xr-disabled-color: var(--jp-layout-color3, #bdbdbd);
-  --xr-background-color: var(--jp-layout-color0, white);
-  --xr-background-color-row-even: var(--jp-layout-color1, white);
-  --xr-background-color-row-odd: var(--jp-layout-color2, #eeeeee);
-}
+           [[0.3652]],
 
-html[theme=dark],
-body[data-theme=dark],
-body.vscode-dark {
-  --xr-font-color0: rgba(255, 255, 255, 1);
-  --xr-font-color2: rgba(255, 255, 255, 0.54);
-  --xr-font-color3: rgba(255, 255, 255, 0.38);
-  --xr-border-color: #1F1F1F;
-  --xr-disabled-color: #515151;
-  --xr-background-color: #111111;
-  --xr-background-color-row-even: #111111;
-  --xr-background-color-row-odd: #313131;
-}
+           [[0.3068]],
 
-.xr-wrap {
-  display: block !important;
-  min-width: 300px;
-  max-width: 700px;
-}
+           ...,
 
-.xr-text-repr-fallback {
-  /* fallback to plain text repr when CSS is not injected (untrusted notebook) */
-  display: none;
-}
+           [[0.5591]],
 
-.xr-header {
-  padding-top: 6px;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  border-bottom: solid 1px var(--xr-border-color);
-}
+           [[0.5418]],
 
-.xr-header > div,
-.xr-header > ul {
-  display: inline;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.xr-obj-type,
-.xr-array-name {
-  margin-left: 2px;
-  margin-right: 10px;
-}
-
-.xr-obj-type {
-  color: var(--xr-font-color2);
-}
-
-.xr-sections {
-  padding-left: 0 !important;
-  display: grid;
-  grid-template-columns: 150px auto auto 1fr 20px 20px;
-}
-
-.xr-section-item {
-  display: contents;
-}
-
-.xr-section-item input {
-  display: none;
-}
-
-.xr-section-item input + label {
-  color: var(--xr-disabled-color);
-}
-
-.xr-section-item input:enabled + label {
-  cursor: pointer;
-  color: var(--xr-font-color2);
-}
-
-.xr-section-item input:enabled + label:hover {
-  color: var(--xr-font-color0);
-}
-
-.xr-section-summary {
-  grid-column: 1;
-  color: var(--xr-font-color2);
-  font-weight: 500;
-}
-
-.xr-section-summary > span {
-  display: inline-block;
-  padding-left: 0.5em;
-}
-
-.xr-section-summary-in:disabled + label {
-  color: var(--xr-font-color2);
-}
-
-.xr-section-summary-in + label:before {
-  display: inline-block;
-  content: '►';
-  font-size: 11px;
-  width: 15px;
-  text-align: center;
-}
-
-.xr-section-summary-in:disabled + label:before {
-  color: var(--xr-disabled-color);
-}
-
-.xr-section-summary-in:checked + label:before {
-  content: '▼';
-}
-
-.xr-section-summary-in:checked + label > span {
-  display: none;
-}
-
-.xr-section-summary,
-.xr-section-inline-details {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-.xr-section-inline-details {
-  grid-column: 2 / -1;
-}
-
-.xr-section-details {
-  display: none;
-  grid-column: 1 / -1;
-  margin-bottom: 5px;
-}
-
-.xr-section-summary-in:checked ~ .xr-section-details {
-  display: contents;
-}
-
-.xr-array-wrap {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 20px auto;
-}
-
-.xr-array-wrap > label {
-  grid-column: 1;
-  vertical-align: top;
-}
-
-.xr-preview {
-  color: var(--xr-font-color3);
-}
-
-.xr-array-preview,
-.xr-array-data {
-  padding: 0 5px !important;
-  grid-column: 2;
-}
-
-.xr-array-data,
-.xr-array-in:checked ~ .xr-array-preview {
-  display: none;
-}
-
-.xr-array-in:checked ~ .xr-array-data,
-.xr-array-preview {
-  display: inline-block;
-}
-
-.xr-dim-list {
-  display: inline-block !important;
-  list-style: none;
-  padding: 0 !important;
-  margin: 0;
-}
-
-.xr-dim-list li {
-  display: inline-block;
-  padding: 0;
-  margin: 0;
-}
-
-.xr-dim-list:before {
-  content: '(';
-}
-
-.xr-dim-list:after {
-  content: ')';
-}
-
-.xr-dim-list li:not(:last-child):after {
-  content: ',';
-  padding-right: 5px;
-}
-
-.xr-has-index {
-  font-weight: bold;
-}
-
-.xr-var-list,
-.xr-var-item {
-  display: contents;
-}
-
-.xr-var-item > div,
-.xr-var-item label,
-.xr-var-item > .xr-var-name span {
-  background-color: var(--xr-background-color-row-even);
-  margin-bottom: 0;
-}
-
-.xr-var-item > .xr-var-name:hover span {
-  padding-right: 5px;
-}
-
-.xr-var-list > li:nth-child(odd) > div,
-.xr-var-list > li:nth-child(odd) > label,
-.xr-var-list > li:nth-child(odd) > .xr-var-name span {
-  background-color: var(--xr-background-color-row-odd);
-}
-
-.xr-var-name {
-  grid-column: 1;
-}
-
-.xr-var-dims {
-  grid-column: 2;
-}
-
-.xr-var-dtype {
-  grid-column: 3;
-  text-align: right;
-  color: var(--xr-font-color2);
-}
-
-.xr-var-preview {
-  grid-column: 4;
-}
-
-.xr-index-preview {
-  grid-column: 2 / 5;
-  color: var(--xr-font-color2);
-}
-
-.xr-var-name,
-.xr-var-dims,
-.xr-var-dtype,
-.xr-preview,
-.xr-attrs dt {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: 10px;
-}
-
-.xr-var-name:hover,
-.xr-var-dims:hover,
-.xr-var-dtype:hover,
-.xr-attrs dt:hover {
-  overflow: visible;
-  width: auto;
-  z-index: 1;
-}
-
-.xr-var-attrs,
-.xr-var-data,
-.xr-index-data {
-  display: none;
-  background-color: var(--xr-background-color) !important;
-  padding-bottom: 5px !important;
-}
-
-.xr-var-attrs-in:checked ~ .xr-var-attrs,
-.xr-var-data-in:checked ~ .xr-var-data,
-.xr-index-data-in:checked ~ .xr-index-data {
-  display: block;
-}
-
-.xr-var-data > table {
-  float: right;
-}
-
-.xr-var-name span,
-.xr-var-data,
-.xr-index-name div,
-.xr-index-data,
-.xr-attrs {
-  padding-left: 25px !important;
-}
-
-.xr-attrs,
-.xr-var-attrs,
-.xr-var-data,
-.xr-index-data {
-  grid-column: 1 / -1;
-}
-
-dl.xr-attrs {
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: 125px auto;
-}
-
-.xr-attrs dt,
-.xr-attrs dd {
-  padding: 0;
-  margin: 0;
-  float: left;
-  padding-right: 10px;
-  width: auto;
-}
-
-.xr-attrs dt {
-  font-weight: normal;
-  grid-column: 1;
-}
-
-.xr-attrs dt:hover span {
-  display: inline-block;
-  background: var(--xr-background-color);
-  padding-right: 10px;
-}
-
-.xr-attrs dd {
-  grid-column: 2;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.xr-icon-database,
-.xr-icon-file-text2,
-.xr-no-icon {
-  display: inline-block;
-  vertical-align: middle;
-  width: 1em;
-  height: 1.5em !important;
-  stroke-width: 0;
-  stroke: currentColor;
-  fill: currentColor;
-}
-</style><pre class='xr-text-repr-fallback'>&lt;TimeSeries (DataArray) (LOCAL_DATE: 29221, component: 1, sample: 1)&gt;
-array([[[0.3829]],
-
-       [[0.3652]],
-
-       [[0.3068]],
-
-       ...,
-
-       [[0.5591]],
-
-       [[0.5418]],
-
-       [[0.4808]]])
-Coordinates:
-  * LOCAL_DATE  (LOCAL_DATE) datetime64[ns] 1940-01-01 1940-01-02 ... 2020-01-01
-  * component   (component) object &#x27;0&#x27;
-Dimensions without coordinates: sample
-Attributes:
-    static_covariates:  None
-    hierarchy:          None</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>TimeSeries (DataArray)</div><div class='xr-array-name'></div><ul class='xr-dim-list'><li><span class='xr-has-index'>LOCAL_DATE</span>: 29221</li><li><span class='xr-has-index'>component</span>: 1</li><li><span>sample</span>: 1</li></ul></div><ul class='xr-sections'><li class='xr-section-item'><div class='xr-array-wrap'><input id='section-2ea017ef-af2f-4cd8-9261-bcb219f8148f' class='xr-array-in' type='checkbox' checked><label for='section-2ea017ef-af2f-4cd8-9261-bcb219f8148f' title='Show/hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-array-preview xr-preview'><span>0.3829 0.3652 0.3068 0.3404 0.3943 ... 0.3173 0.5591 0.5418 0.4808</span></div><div class='xr-array-data'><pre>array([[[0.3829]],
-
-       [[0.3652]],
-
-       [[0.3068]],
-
-       ...,
-
-       [[0.5591]],
-
-       [[0.5418]],
-
-       [[0.4808]]])</pre></div></div></li><li class='xr-section-item'><input id='section-9e6ca5f3-d25c-42b3-81bb-db777d3083a4' class='xr-section-summary-in' type='checkbox'  checked><label for='section-9e6ca5f3-d25c-42b3-81bb-db777d3083a4' class='xr-section-summary' >Coordinates: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>LOCAL_DATE</span></div><div class='xr-var-dims'>(LOCAL_DATE)</div><div class='xr-var-dtype'>datetime64[ns]</div><div class='xr-var-preview xr-preview'>1940-01-01 ... 2020-01-01</div><input id='attrs-e5d1d999-908a-4629-8b91-23b8b1f16572' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-e5d1d999-908a-4629-8b91-23b8b1f16572' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-53d9d1a2-6423-45d5-aa67-e2abd57e4daf' class='xr-var-data-in' type='checkbox'><label for='data-53d9d1a2-6423-45d5-aa67-e2abd57e4daf' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;1940-01-01T00:00:00.000000000&#x27;, &#x27;1940-01-02T00:00:00.000000000&#x27;,
-       &#x27;1940-01-03T00:00:00.000000000&#x27;, ..., &#x27;2019-12-30T00:00:00.000000000&#x27;,
-       &#x27;2019-12-31T00:00:00.000000000&#x27;, &#x27;2020-01-01T00:00:00.000000000&#x27;],
-      dtype=&#x27;datetime64[ns]&#x27;)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>component</span></div><div class='xr-var-dims'>(component)</div><div class='xr-var-dtype'>object</div><div class='xr-var-preview xr-preview'>&#x27;0&#x27;</div><input id='attrs-a9fadacc-1b9d-49ec-ab24-b23026651c77' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-a9fadacc-1b9d-49ec-ab24-b23026651c77' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-be413705-6c01-48d4-89e3-db5beffc05c3' class='xr-var-data-in' type='checkbox'><label for='data-be413705-6c01-48d4-89e3-db5beffc05c3' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;0&#x27;], dtype=object)</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-90349aa2-018a-48c4-81fe-e639a45d1618' class='xr-section-summary-in' type='checkbox'  ><label for='section-90349aa2-018a-48c4-81fe-e639a45d1618' class='xr-section-summary' >Indexes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-index-name'><div>LOCAL_DATE</div></div><div class='xr-index-preview'>PandasIndex</div><div></div><input id='index-ec466a97-1f2b-4136-9da8-3ddf133c341d' class='xr-index-data-in' type='checkbox'/><label for='index-ec466a97-1f2b-4136-9da8-3ddf133c341d' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(DatetimeIndex([&#x27;1940-01-01&#x27;, &#x27;1940-01-02&#x27;, &#x27;1940-01-03&#x27;, &#x27;1940-01-04&#x27;,
-               &#x27;1940-01-05&#x27;, &#x27;1940-01-06&#x27;, &#x27;1940-01-07&#x27;, &#x27;1940-01-08&#x27;,
-               &#x27;1940-01-09&#x27;, &#x27;1940-01-10&#x27;,
-               ...
-               &#x27;2019-12-23&#x27;, &#x27;2019-12-24&#x27;, &#x27;2019-12-25&#x27;, &#x27;2019-12-26&#x27;,
-               &#x27;2019-12-27&#x27;, &#x27;2019-12-28&#x27;, &#x27;2019-12-29&#x27;, &#x27;2019-12-30&#x27;,
-               &#x27;2019-12-31&#x27;, &#x27;2020-01-01&#x27;],
-              dtype=&#x27;datetime64[ns]&#x27;, name=&#x27;LOCAL_DATE&#x27;, length=29221, freq=&#x27;D&#x27;))</pre></div></li><li class='xr-var-item'><div class='xr-index-name'><div>component</div></div><div class='xr-index-preview'>PandasIndex</div><div></div><input id='index-d7baee29-013f-4e9c-ad61-bd5c81284a0c' class='xr-index-data-in' type='checkbox'/><label for='index-d7baee29-013f-4e9c-ad61-bd5c81284a0c' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([&#x27;0&#x27;], dtype=&#x27;object&#x27;, name=&#x27;component&#x27;))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-68d98be3-d7ca-4416-9b14-a6c257de9cd7' class='xr-section-summary-in' type='checkbox'  checked><label for='section-68d98be3-d7ca-4416-9b14-a6c257de9cd7' class='xr-section-summary' >Attributes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'><dt><span>static_covariates :</span></dt><dd>None</dd><dt><span>hierarchy :</span></dt><dd>None</dd></dl></div></li></ul></div></div>
+           [[0.4808]]])
+    Coordinates:
+      * LOCAL_DATE  (LOCAL_DATE) datetime64[ns] 1940-01-01 1940-01-02 ... 2020-01-01
+      * component   (component) object '0'
+    Dimensions without coordinates: sample
+    Attributes:
+        static_covariates:  None
+        hierarchy:          None
 
 ``` python
 # Perform anomaly detection
 anoms_train_kmeans, anoms_test_kmeans, anoms_kmeans = detect(
   scores_train_kmeans, scores_test_kmeans, detector)
-anoms_kmeans
+print(anoms_kmeans)
 ```
 
-<div><svg style="position: absolute; width: 0; height: 0; overflow: hidden">
-<defs>
-<symbol id="icon-database" viewBox="0 0 32 32">
-<path d="M16 0c-8.837 0-16 2.239-16 5v4c0 2.761 7.163 5 16 5s16-2.239 16-5v-4c0-2.761-7.163-5-16-5z"></path>
-<path d="M16 17c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
-<path d="M16 26c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
-</symbol>
-<symbol id="icon-file-text2" viewBox="0 0 32 32">
-<path d="M28.681 7.159c-0.694-0.947-1.662-2.053-2.724-3.116s-2.169-2.030-3.116-2.724c-1.612-1.182-2.393-1.319-2.841-1.319h-15.5c-1.378 0-2.5 1.121-2.5 2.5v27c0 1.378 1.122 2.5 2.5 2.5h23c1.378 0 2.5-1.122 2.5-2.5v-19.5c0-0.448-0.137-1.23-1.319-2.841zM24.543 5.457c0.959 0.959 1.712 1.825 2.268 2.543h-4.811v-4.811c0.718 0.556 1.584 1.309 2.543 2.268zM28 29.5c0 0.271-0.229 0.5-0.5 0.5h-23c-0.271 0-0.5-0.229-0.5-0.5v-27c0-0.271 0.229-0.5 0.5-0.5 0 0 15.499-0 15.5 0v7c0 0.552 0.448 1 1 1h7v19.5z"></path>
-<path d="M23 26h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-<path d="M23 22h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-<path d="M23 18h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-</symbol>
-</defs>
-</svg>
-<style>/* CSS stylesheet for displaying xarray objects in jupyterlab.
- *
- */
+    <TimeSeries (DataArray) (LOCAL_DATE: 29221, component: 1, sample: 1)>
+    array([[[0.]],
 
-:root {
-  --xr-font-color0: var(--jp-content-font-color0, rgba(0, 0, 0, 1));
-  --xr-font-color2: var(--jp-content-font-color2, rgba(0, 0, 0, 0.54));
-  --xr-font-color3: var(--jp-content-font-color3, rgba(0, 0, 0, 0.38));
-  --xr-border-color: var(--jp-border-color2, #e0e0e0);
-  --xr-disabled-color: var(--jp-layout-color3, #bdbdbd);
-  --xr-background-color: var(--jp-layout-color0, white);
-  --xr-background-color-row-even: var(--jp-layout-color1, white);
-  --xr-background-color-row-odd: var(--jp-layout-color2, #eeeeee);
-}
+           [[0.]],
 
-html[theme=dark],
-body[data-theme=dark],
-body.vscode-dark {
-  --xr-font-color0: rgba(255, 255, 255, 1);
-  --xr-font-color2: rgba(255, 255, 255, 0.54);
-  --xr-font-color3: rgba(255, 255, 255, 0.38);
-  --xr-border-color: #1F1F1F;
-  --xr-disabled-color: #515151;
-  --xr-background-color: #111111;
-  --xr-background-color-row-even: #111111;
-  --xr-background-color-row-odd: #313131;
-}
+           [[0.]],
 
-.xr-wrap {
-  display: block !important;
-  min-width: 300px;
-  max-width: 700px;
-}
+           ...,
 
-.xr-text-repr-fallback {
-  /* fallback to plain text repr when CSS is not injected (untrusted notebook) */
-  display: none;
-}
+           [[0.]],
 
-.xr-header {
-  padding-top: 6px;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  border-bottom: solid 1px var(--xr-border-color);
-}
+           [[0.]],
 
-.xr-header > div,
-.xr-header > ul {
-  display: inline;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.xr-obj-type,
-.xr-array-name {
-  margin-left: 2px;
-  margin-right: 10px;
-}
-
-.xr-obj-type {
-  color: var(--xr-font-color2);
-}
-
-.xr-sections {
-  padding-left: 0 !important;
-  display: grid;
-  grid-template-columns: 150px auto auto 1fr 20px 20px;
-}
-
-.xr-section-item {
-  display: contents;
-}
-
-.xr-section-item input {
-  display: none;
-}
-
-.xr-section-item input + label {
-  color: var(--xr-disabled-color);
-}
-
-.xr-section-item input:enabled + label {
-  cursor: pointer;
-  color: var(--xr-font-color2);
-}
-
-.xr-section-item input:enabled + label:hover {
-  color: var(--xr-font-color0);
-}
-
-.xr-section-summary {
-  grid-column: 1;
-  color: var(--xr-font-color2);
-  font-weight: 500;
-}
-
-.xr-section-summary > span {
-  display: inline-block;
-  padding-left: 0.5em;
-}
-
-.xr-section-summary-in:disabled + label {
-  color: var(--xr-font-color2);
-}
-
-.xr-section-summary-in + label:before {
-  display: inline-block;
-  content: '►';
-  font-size: 11px;
-  width: 15px;
-  text-align: center;
-}
-
-.xr-section-summary-in:disabled + label:before {
-  color: var(--xr-disabled-color);
-}
-
-.xr-section-summary-in:checked + label:before {
-  content: '▼';
-}
-
-.xr-section-summary-in:checked + label > span {
-  display: none;
-}
-
-.xr-section-summary,
-.xr-section-inline-details {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-.xr-section-inline-details {
-  grid-column: 2 / -1;
-}
-
-.xr-section-details {
-  display: none;
-  grid-column: 1 / -1;
-  margin-bottom: 5px;
-}
-
-.xr-section-summary-in:checked ~ .xr-section-details {
-  display: contents;
-}
-
-.xr-array-wrap {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 20px auto;
-}
-
-.xr-array-wrap > label {
-  grid-column: 1;
-  vertical-align: top;
-}
-
-.xr-preview {
-  color: var(--xr-font-color3);
-}
-
-.xr-array-preview,
-.xr-array-data {
-  padding: 0 5px !important;
-  grid-column: 2;
-}
-
-.xr-array-data,
-.xr-array-in:checked ~ .xr-array-preview {
-  display: none;
-}
-
-.xr-array-in:checked ~ .xr-array-data,
-.xr-array-preview {
-  display: inline-block;
-}
-
-.xr-dim-list {
-  display: inline-block !important;
-  list-style: none;
-  padding: 0 !important;
-  margin: 0;
-}
-
-.xr-dim-list li {
-  display: inline-block;
-  padding: 0;
-  margin: 0;
-}
-
-.xr-dim-list:before {
-  content: '(';
-}
-
-.xr-dim-list:after {
-  content: ')';
-}
-
-.xr-dim-list li:not(:last-child):after {
-  content: ',';
-  padding-right: 5px;
-}
-
-.xr-has-index {
-  font-weight: bold;
-}
-
-.xr-var-list,
-.xr-var-item {
-  display: contents;
-}
-
-.xr-var-item > div,
-.xr-var-item label,
-.xr-var-item > .xr-var-name span {
-  background-color: var(--xr-background-color-row-even);
-  margin-bottom: 0;
-}
-
-.xr-var-item > .xr-var-name:hover span {
-  padding-right: 5px;
-}
-
-.xr-var-list > li:nth-child(odd) > div,
-.xr-var-list > li:nth-child(odd) > label,
-.xr-var-list > li:nth-child(odd) > .xr-var-name span {
-  background-color: var(--xr-background-color-row-odd);
-}
-
-.xr-var-name {
-  grid-column: 1;
-}
-
-.xr-var-dims {
-  grid-column: 2;
-}
-
-.xr-var-dtype {
-  grid-column: 3;
-  text-align: right;
-  color: var(--xr-font-color2);
-}
-
-.xr-var-preview {
-  grid-column: 4;
-}
-
-.xr-index-preview {
-  grid-column: 2 / 5;
-  color: var(--xr-font-color2);
-}
-
-.xr-var-name,
-.xr-var-dims,
-.xr-var-dtype,
-.xr-preview,
-.xr-attrs dt {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: 10px;
-}
-
-.xr-var-name:hover,
-.xr-var-dims:hover,
-.xr-var-dtype:hover,
-.xr-attrs dt:hover {
-  overflow: visible;
-  width: auto;
-  z-index: 1;
-}
-
-.xr-var-attrs,
-.xr-var-data,
-.xr-index-data {
-  display: none;
-  background-color: var(--xr-background-color) !important;
-  padding-bottom: 5px !important;
-}
-
-.xr-var-attrs-in:checked ~ .xr-var-attrs,
-.xr-var-data-in:checked ~ .xr-var-data,
-.xr-index-data-in:checked ~ .xr-index-data {
-  display: block;
-}
-
-.xr-var-data > table {
-  float: right;
-}
-
-.xr-var-name span,
-.xr-var-data,
-.xr-index-name div,
-.xr-index-data,
-.xr-attrs {
-  padding-left: 25px !important;
-}
-
-.xr-attrs,
-.xr-var-attrs,
-.xr-var-data,
-.xr-index-data {
-  grid-column: 1 / -1;
-}
-
-dl.xr-attrs {
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: 125px auto;
-}
-
-.xr-attrs dt,
-.xr-attrs dd {
-  padding: 0;
-  margin: 0;
-  float: left;
-  padding-right: 10px;
-  width: auto;
-}
-
-.xr-attrs dt {
-  font-weight: normal;
-  grid-column: 1;
-}
-
-.xr-attrs dt:hover span {
-  display: inline-block;
-  background: var(--xr-background-color);
-  padding-right: 10px;
-}
-
-.xr-attrs dd {
-  grid-column: 2;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.xr-icon-database,
-.xr-icon-file-text2,
-.xr-no-icon {
-  display: inline-block;
-  vertical-align: middle;
-  width: 1em;
-  height: 1.5em !important;
-  stroke-width: 0;
-  stroke: currentColor;
-  fill: currentColor;
-}
-</style><pre class='xr-text-repr-fallback'>&lt;TimeSeries (DataArray) (LOCAL_DATE: 29221, component: 1, sample: 1)&gt;
-array([[[0.]],
-
-       [[0.]],
-
-       [[0.]],
-
-       ...,
-
-       [[0.]],
-
-       [[0.]],
-
-       [[0.]]])
-Coordinates:
-  * LOCAL_DATE  (LOCAL_DATE) datetime64[ns] 1940-01-01 1940-01-02 ... 2020-01-01
-  * component   (component) object &#x27;0&#x27;
-Dimensions without coordinates: sample
-Attributes:
-    static_covariates:  None
-    hierarchy:          None</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>TimeSeries (DataArray)</div><div class='xr-array-name'></div><ul class='xr-dim-list'><li><span class='xr-has-index'>LOCAL_DATE</span>: 29221</li><li><span class='xr-has-index'>component</span>: 1</li><li><span>sample</span>: 1</li></ul></div><ul class='xr-sections'><li class='xr-section-item'><div class='xr-array-wrap'><input id='section-733592fc-6f11-4fb6-b4d0-4872b7f15ded' class='xr-array-in' type='checkbox' checked><label for='section-733592fc-6f11-4fb6-b4d0-4872b7f15ded' title='Show/hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-array-preview xr-preview'><span>0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 ... 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</span></div><div class='xr-array-data'><pre>array([[[0.]],
-
-       [[0.]],
-
-       [[0.]],
-
-       ...,
-
-       [[0.]],
-
-       [[0.]],
-
-       [[0.]]])</pre></div></div></li><li class='xr-section-item'><input id='section-0c420f71-a185-45de-b29e-83355f48a7b2' class='xr-section-summary-in' type='checkbox'  checked><label for='section-0c420f71-a185-45de-b29e-83355f48a7b2' class='xr-section-summary' >Coordinates: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>LOCAL_DATE</span></div><div class='xr-var-dims'>(LOCAL_DATE)</div><div class='xr-var-dtype'>datetime64[ns]</div><div class='xr-var-preview xr-preview'>1940-01-01 ... 2020-01-01</div><input id='attrs-30521e5c-7706-4150-bf65-ace6b347ebf9' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-30521e5c-7706-4150-bf65-ace6b347ebf9' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-a69f2d9d-6fdb-4b5c-88a6-c82941f7ae58' class='xr-var-data-in' type='checkbox'><label for='data-a69f2d9d-6fdb-4b5c-88a6-c82941f7ae58' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;1940-01-01T00:00:00.000000000&#x27;, &#x27;1940-01-02T00:00:00.000000000&#x27;,
-       &#x27;1940-01-03T00:00:00.000000000&#x27;, ..., &#x27;2019-12-30T00:00:00.000000000&#x27;,
-       &#x27;2019-12-31T00:00:00.000000000&#x27;, &#x27;2020-01-01T00:00:00.000000000&#x27;],
-      dtype=&#x27;datetime64[ns]&#x27;)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>component</span></div><div class='xr-var-dims'>(component)</div><div class='xr-var-dtype'>object</div><div class='xr-var-preview xr-preview'>&#x27;0&#x27;</div><input id='attrs-52969e7b-055a-44fd-9765-3a1ad6c27560' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-52969e7b-055a-44fd-9765-3a1ad6c27560' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-ea31fdef-6d61-4f6a-9d19-2ed6be26da97' class='xr-var-data-in' type='checkbox'><label for='data-ea31fdef-6d61-4f6a-9d19-2ed6be26da97' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;0&#x27;], dtype=object)</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-5f5d4dce-dd2a-42be-8c67-104834f5d677' class='xr-section-summary-in' type='checkbox'  ><label for='section-5f5d4dce-dd2a-42be-8c67-104834f5d677' class='xr-section-summary' >Indexes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-index-name'><div>LOCAL_DATE</div></div><div class='xr-index-preview'>PandasIndex</div><div></div><input id='index-fecfe762-0970-45d8-b550-b6c56c4452a8' class='xr-index-data-in' type='checkbox'/><label for='index-fecfe762-0970-45d8-b550-b6c56c4452a8' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(DatetimeIndex([&#x27;1940-01-01&#x27;, &#x27;1940-01-02&#x27;, &#x27;1940-01-03&#x27;, &#x27;1940-01-04&#x27;,
-               &#x27;1940-01-05&#x27;, &#x27;1940-01-06&#x27;, &#x27;1940-01-07&#x27;, &#x27;1940-01-08&#x27;,
-               &#x27;1940-01-09&#x27;, &#x27;1940-01-10&#x27;,
-               ...
-               &#x27;2019-12-23&#x27;, &#x27;2019-12-24&#x27;, &#x27;2019-12-25&#x27;, &#x27;2019-12-26&#x27;,
-               &#x27;2019-12-27&#x27;, &#x27;2019-12-28&#x27;, &#x27;2019-12-29&#x27;, &#x27;2019-12-30&#x27;,
-               &#x27;2019-12-31&#x27;, &#x27;2020-01-01&#x27;],
-              dtype=&#x27;datetime64[ns]&#x27;, name=&#x27;LOCAL_DATE&#x27;, length=29221, freq=&#x27;D&#x27;))</pre></div></li><li class='xr-var-item'><div class='xr-index-name'><div>component</div></div><div class='xr-index-preview'>PandasIndex</div><div></div><input id='index-0a0450b6-fc86-48e7-a596-645164276aa6' class='xr-index-data-in' type='checkbox'/><label for='index-0a0450b6-fc86-48e7-a596-645164276aa6' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([&#x27;0&#x27;], dtype=&#x27;object&#x27;, name=&#x27;component&#x27;))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-8b629a45-288e-49e1-85b0-692dab44c346' class='xr-section-summary-in' type='checkbox'  checked><label for='section-8b629a45-288e-49e1-85b0-692dab44c346' class='xr-section-summary' >Attributes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'><dt><span>static_covariates :</span></dt><dd>None</dd><dt><span>hierarchy :</span></dt><dd>None</dd></dl></div></li></ul></div></div>
+           [[0.]]])
+    Coordinates:
+      * LOCAL_DATE  (LOCAL_DATE) datetime64[ns] 1940-01-01 1940-01-02 ... 2020-01-01
+      * component   (component) object '0'
+    Dimensions without coordinates: sample
+    Attributes:
+        static_covariates:  None
+        hierarchy:          None
 
 ``` python
 # Plot anomaly scores & original series
@@ -1710,16 +370,16 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/ClustKMeans.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/ClustKMeans.html", width=px_width, height=px_height)
 ```
 
 </details>
 
         <iframe
             width="800"
-            height="600"
-            src="./HtmlPlot/plot.html"
+            height="800"
+            src="./HtmlPlots/ClustKMeans.html"
             frameborder="0"
             allowfullscreen
             
@@ -1781,8 +441,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/ClustGMM.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/ClustGMM.html", width=px_width, height=px_height)
 ```
 
 </details>
@@ -1795,8 +455,8 @@ IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
 
         <iframe
             width="800"
-            height="600"
-            src="./HtmlPlot/plot.html"
+            height="800"
+            src="./HtmlPlots/ClustGMM.html"
             frameborder="0"
             allowfullscreen
             
@@ -1954,8 +614,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/PCS1.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/PCS1.html", width=px_width, height=px_height)
 
 
 # Principal components plot, PC3-4-5
@@ -1973,8 +633,8 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/PCS2.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/PCS2.html", width=px_width, height=px_height)
 
 
 # # Principal components plot, last 3 PCs
@@ -2000,8 +660,8 @@ IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
 
         <iframe
             width="800"
-            height="600"
-            src="./HtmlPlot/plot.html"
+            height="800"
+            src="./HtmlPlots/PCS2.html"
             frameborder="0"
             allowfullscreen
             
@@ -2034,16 +694,16 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/TSNE1.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/TSNE1.html", width=px_width, height=px_height)
 ```
 
 </details>
 
         <iframe
             width="800"
-            height="600"
-            src="./HtmlPlot/plot.html"
+            height="800"
+            src="./HtmlPlots/TSNE1.html"
             frameborder="0"
             allowfullscreen
             
@@ -2347,16 +1007,16 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+fig.write_html("./HtmlPlots/TSNE2.html", include_plotlyjs = "cdn")
+IFrame(src="./HtmlPlots/TSNE2.html", width=px_width, height=px_height)
 ```
 
 </details>
 
         <iframe
             width="800"
-            height="600"
-            src="./HtmlPlot/plot.html"
+            height="800"
+            src="./HtmlPlots/TSNE2.html"
             frameborder="0"
             allowfullscreen
             

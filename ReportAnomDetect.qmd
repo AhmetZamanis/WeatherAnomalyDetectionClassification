@@ -2,7 +2,7 @@
 title: "Time series anomaly detection - Canadian weather data"
 author: "Ahmet Zamanis"
 format:
-  gfm: 
+  html: 
     toc: true
 editor: visual
 jupyter: python3
@@ -12,9 +12,11 @@ execute:
 
 ## Introduction
 
-Introduce anomaly detection, packages, report structure
+This report will apply & compare several anomaly detection algorithms on a multivariate time series dataset of weather measurements in Canada. We'll use numerous algorithms from the [PyOD](https://github.com/yzhao062/pyod) anomaly detection package, along with time series data formats & wrappers from the anomaly detection module of the [Darts](https://github.com/unit8co/darts) package. We'll also implement a simple autoencoder using PyTorch Lightning. We'll use numerous visualizations, including 3D Plotly scatterplots to illustrate the results and unique outputs of each algorithm.
 
-Introduce data & source
+The data consists of daily mean temperature and total precipitation measurements across 13 Canadian locations, some ranging from 1940 to 2020, others starting from 1960. The data was downloaded from [OpenML](https://openml.org/search?type=data&status=active&id=43843&sort=runs), shared by user Elif Ceren Gök.
+
+The Python scripts for this analysis are available on [GitHub](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification). They may not be fully up to date with the report.
 
 ```{python Imports}
 #| code-fold: true
@@ -30,7 +32,6 @@ import warnings
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
-from IPython.display import IFrame
 
 # Preprocessing
 from sklearn.preprocessing import MinMaxScaler
@@ -92,6 +93,8 @@ warnings.filterwarnings("ignore", ".*does not have many workers.*")
 
 ## Data preparation
 
+The data is in .arff format, and we'll use the [liac-arff](https://github.com/renatopp/liac-arff) package to read it. We have daily mean temperature and total precipitation values for each of the 13 locations.
+
 ```{python LoadData}
 
 # Load raw data from .arff
@@ -103,6 +106,12 @@ df = pd.DataFrame(
 print(df.iloc[:,0:4])
 
 ```
+
+To score anomalies, we need to compare the weather variables with the time variables: The same weather measurements can be perfectly normal or anomalous depending on the season. We are looking for **local anomalies,** not global.
+
+-   To this end, we'll extract month, week of year and day of year features from our date column.
+
+-   We'll use cyclical encoding to transform these categorical variables into numeric, while reflecting their cyclical nature to the algorithms we'll use. This creates a pair of sine and cosine values for each time variable, resulting in 8 variables per location.
 
 ```{python TimeFeatures}
 
@@ -119,6 +128,8 @@ df["day_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 
 ```
 
+We'll focus our attention only on Ottawa, one of the locations that has data available from 1940. There are a few missing weather measurements across the time range, and we'll interpolate them.
+
 ```{python TSOttawa}
 
 # Retrieve the weather data for Ottawa (1940 start) as Darts TimeSeries
@@ -128,13 +139,14 @@ ts_ottawa = TimeSeries.from_dataframe(
   value_cols = ["MEAN_TEMPERATURE_OTTAWA", "TOTAL_PRECIPITATION_OTTAWA"],
   fill_missing_dates = True
 )
-ts_ottawa
 
 # Interpolate missing values
 na_filler = MissingValuesFiller()
 ts_ottawa = na_filler.transform(ts_ottawa)
 
 ```
+
+We don't have any missing values for our time variables, as we created them from the dates.
 
 ```{python TSCovars}
 
@@ -146,9 +158,10 @@ ts_covars = TimeSeries.from_dataframe(
   'day_cos'],
   fill_missing_dates = True
 )
-print(ts_covars)
 
 ```
+
+We'll split our data in roughly two: The anomaly scorers will be trained on data before 1980, and "tested" on data after 1980, though we won't have any objective performance metrics, as we don't have true anomaly labels to compare our models' output with.
 
 ```{python Preprocess}
 
@@ -163,7 +176,11 @@ ts_test = ts_ottawa.drop_before(train_end)
 
 ```
 
-## Anomaly detection
+## Anomaly detection with PyOD & Darts
+
+Most of the algorithms we'll use are sensitive to features with differing value scales, so we'll scale our features from -1 to 1. This is the value range for the cyclical encoded columns, so they will be unchanged.
+
+We'll also create a Darts anomaly detector, with a high quantile threshold. It will take in the anomaly scores produced by the scorers, and flag the top Qth quantile as anomalies. It's also possible to use a raw score threshold detector.
 
 ```{python Utilities}
 
@@ -172,12 +189,26 @@ feature_range = (-1, 1) # The value range of cyclical encoded features
 scaler = Scaler(MinMaxScaler(feature_range = feature_range))
 
 # Create quantile detector
-q = 0.99 # The detectpr will flag scores above this quantile as anomalies
+q = 0.999 # The detector will flag scores above this quantile as anomalies
 detector = QuantileDetector(high_quantile = q)
 
 ```
 
+To shorten the code, we'll use several functions to concisely train our models, anomaly score the data & create plots. These are available [here](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/blob/main/X_HelperFunctionsAnom.py).
+
 ### K-means clustering
+
+Our first anomaly scorer is based on the K-means clustering algorithm. K number of clusters are fit to the data, and anomaly scores for each observation are calculated as the smallest distance from the nearest cluster.
+
+-   As an intuitive choice for the number of clusters, we'll go with 12, one for each month of the year. Another decent choice is likely 4, one for each season.
+
+The `window` parameter controls the number of observations that will be anomaly scored together. Since we're interested in daily weather anomalies, we'll use the default value of 1. For many time series anomaly detection tasks, larger windows will make more sense.
+
+-   For example, when anomaly scoring data from financial markets, a single unusual day may not be very meaningful, but a whole week of trading with unusual values may be an important signal.
+
+-   In such a case, with `window = 7`, Darts reformats the data so each row is a sequence of 7 days. Anomaly scoring is performed on each sequence instead of single observations.
+
+We fit the anomaly scorer on the training period, and generate anomaly scores both for the training & testing periods.
 
 ```{python KMeansScore}
 
@@ -190,18 +221,20 @@ scorer_kmeans = KMeansScorer(
 # Perform anomaly scoring
 scores_train_kmeans, scores_test_kmeans, scores_kmeans = score(
   ts_train, ts_test, scorer_kmeans, scaler)
-print(scores_kmeans)
 
 ```
+
+We pass the anomaly scores to our detector, and get binary anomaly labels.
 
 ```{python KMeansDetect}
 
 # Perform anomaly detection
 anoms_train_kmeans, anoms_test_kmeans, anoms_kmeans = detect(
   scores_train_kmeans, scores_test_kmeans, detector)
-print(anoms_kmeans)
 
 ```
+
+Since we don't have true anomaly labels, there aren't any performance metrics we can calculate. Instead, we'll plot the anomaly scores along with the weather measurements.
 
 ```{python KMeansPlotSeries}
 
@@ -211,12 +244,26 @@ plot_series(
   
 ```
 
+From the plots above, it appears the K-means anomaly scores are highly related to the total precipitation values. A particular post-2000 day with very high precipitation stands out.
+
+-   The overall anomaly scores and weather measurements don't seem too different before and after 1980, though a few post-1980 days particularly stand out.
+
+Next, we'll plot the same variables, but this time we'll color by anomaly labels. The black line will be the observations with bottom Qth quantile of anomaly scores, and the blue line will be the top Qth, the flagged anomalies.
+
 ```{python KMeansPlotDetect}
 
 # Detections plot
 plot_detection("K-means scores", q, ts_ottawa, scores_kmeans, anoms_kmeans)
 
 ```
+
+We see the anomaly scores for the flagged observations are clearly and considerably higher than non-flagged ones, which is good. Ideally we want as much separation between the anomaly scores as possible to avoid false positives or false negatives.
+
+-   The anomalies all have the highest observed precipitation values. Their temperature values are not unusual compared to the remaining observations, but they are generally on the higher side.
+
+-   In summary, the K-means scorer identifies warm days with unusually high precipitation as anomalies.
+
+Next, we'll look at the anomaly score density plots for the training and testing periods, comparing their distributions.
 
 ```{python KMeansPlotDist}
 
@@ -225,6 +272,10 @@ plot_dist("K-means scorer", scores_train_kmeans, scores_test_kmeans)
 
 ```
 
+The K-means anomaly scores are distributed similarly, though the post-1980 period does have a bit more of the higher-scored observations, and a bit less of the average-scored observations.
+
+Next, we'll plot all observations in a 3D scatterplot, with our weather variables and the month as our three dimensions. We'll color the observations by their anomaly labels. The interactive plot can be moved around by clicking and holding.
+
 ```{python KMeansPlot3D}
 
 # 3D anomalies plot
@@ -232,6 +283,10 @@ plot_anom3d(
   "K-means scorer", ts_ottawa, anoms_kmeans, px_width, px_height, html = True)
 
 ```
+
+Here we see the vast majority of anomalies are summer months with very high precipitation, though not unusual temperatures. Some anomalies also belong to the fall months, and a single one is in May.
+
+We can also retrieve the fitted cluster labels from the K-means algorithm, and use them to color the observations in the same 3D scatterplot.
 
 ```{python KMeansClustering}
 #| code-fold: true
@@ -253,12 +308,25 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlots/ClustKMeans.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlots/ClustKMeans.html", width=px_width, height=px_height)
+fig.show()
 
 ```
 
+We see the K-means algorithm very clearly clusters the observations according to their months. The anomaly scores are then calculated as the distance from the closest cluster centroid, so the most anomalous observations are the high-precipitation ones in summer.
+
+-   Compared to the summer months, we don't see such particularly distant observations in winter.
+
 ### Gaussian mixture models (GMM)
+
+The GMM approach assumes that the data distribution consists of the combination of an N number of Gaussian distributions. These N distributions are learned from the fitted data. Anomaly scores are computed for observations based on their likelihoods.
+
+-   In practice, this approach is fairly similar to K-means clustering. Just like the choice of K clusters in K-means, we'll choose the number of Gaussian mixture components as a parameter.
+
+    -   We'll go with `n_components = 4`, one for each season, just for variety against the previous approach of 12 cluster centroids.
+
+    -   GMM is trained with expectation maximization, so the solution is not deterministic, though convergence to a local solution is guaranteed. We'll perform 10 initializations, and the best results will be kept.
+
+Darts offers the `PyODScorer` time series wrapper for any algorithm in `PyOD`.
 
 ```{python CreateGMM}
 
@@ -266,13 +334,15 @@ IFrame(src="./HtmlPlots/ClustKMeans.html", width=px_width, height=px_height)
 gmm = GMM(
   n_components = 4, # N. of Gaussian mixture components
   n_init = 10, # N. of initializations for expectation maximization
-  contamination = 0.01, # % of expected anomalies in the dataset
+  contamination = (1 - q), # Proportion of expected anomalies in the dataset
   random_state = 1923)
   
 # Create Darts GMM scorer  
 scorer_gmm = PyODScorer(model = gmm, window = 1)
 
 ```
+
+We won't repeat the entire anomaly detection & plotting code for each algorithm, but just illustrate the differences and comment on the outputs.
 
 ```{python GMMCode}
 #| code-fold: true
@@ -315,17 +385,44 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlots/ClustGMM.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlots/ClustGMM.html", width=px_width, height=px_height)
+fig.show()
 
 ```
 
+The GMM algorithm's outputs are fairly similar to K-means overall.
+
+-   The differences between scores for anomalous and non-anomalous observations appear to be even larger in magnitude, which is good. The particular anomaly after year 2000 stands out even more compared to other anomalies.
+
+-   We could say the GMM anomalies are a bit colder & less rainy overall.
+
+-   The score distributions of train & test periods are even more similar, and have very high kurtosis. While it may be easier to identify individual anomalies, the overall comparison of scores across periods may be less meaningful.
+
+-   Unlike K-means, we now have a few anomalies in all months of the year, including winter months. This is likely because the scoring is now based on 4 mixture components (seasons) instead of 12 clusters (months).
+
+    -   For example, it's possible the anomalies in February are flagged because they are compared with the same mixture component as observations from January. In contrast, they were likely just compared with the "January cluster" in K-means, and appeared relatively non-anomalous.
+
+    -   If we were interested in seasonal anomalies, this approach could be preferable, and for monthly anomalies K-means could be preferable (or, either approach could be fit with either number of components / clusters).
+
+-   The fitted mixture components correspond to each season, as can be seen in the 3D clustering plot.
+
 ### ECOD
+
+ECOD is a fairly simple and quick anomaly detection method which relies on empirical cumulative distribution functions. Let's make a few definitions to understand how.
+
+-   For a value $x$, drawn from a random variable $X$, the cumulative distribution function $f(x)$ is the cumulative sum of the probability density functions for values $<=x$. This also corresponds to the probability that $X <= x$.
+
+-   The empirical CDF is a step function obtained from an empirical sample measurement.
+
+ECOD estimates a non-parametric eCDF from each dimension (feature) in the training data.
+
+-   Tail probabilities are also estimated for each dimension. For each observation, the tail probabilities are used to calculate a dimensional anomaly score. These are then aggregated.
+
+-   ECOD is simple & efficient, with no parameters to choose. However, I believe the nature of the algorithm should not be able to capture the interactions in our multivariate time series (weather measurements dependent on the time features).
 
 ```{python CreateECOD}
 
 # Create ECOD scorer
-ecod = ECOD(contamination = 0.01)
+ecod = ECOD(contamination = (1 - q))
 scorer_ecod = PyODScorer(model = ecod, window = 1)
 
 ```
@@ -356,25 +453,42 @@ plot_anom3d("ECOD scorer", ts_ottawa, anoms_ecod, px_width, px_height, html = Tr
 
 ```
 
+Indeed, we see the anomaly scores for the flagged anomalies are fairly close to the non-anomalous observations. The particularly high post-2000 observation is not even assigned a high score.
+
+-   The flagged anomalies have temperature and precipitation values all over the value range.
+
+-   The anomaly score distributions are considerably less right-skewed compared to previous algorithms, as ECOD does not attribute particularly high scores to any observation.
+
+-   Looking at the 3D anomalies plot, ECOD still flags some of the rainy summer observations, but misses quite a few. There are also numerous flagged observations that seem fairly normal, especially in December.
+
+-   
+
+One intuitive feature of the PyOD ECOD implementation is the ability to explain each training point's anomaly scoring with a dimensional outlier score plot. We'll view the plot for the highest precipitation day in the training data, which was assigned the highest training anomaly score by the previous algorithms.
+
 ```{python ECODExplainer}
 
-# Special to scorer: Explain a single training point's outlier scoring
+# Special to ECOD scorer: Explain a single training point's outlier scoring
 idx_max_precip = np.argmax(
   ts_train['TOTAL_PRECIPITATION_OTTAWA'].univariate_values())
 scorer_ecod.model.explain_outlier(
   ind = idx_max_precip, # Index of point to explain
-  columns = [1, 2, 3, 4], # Dimensions to explain
+  columns = [0, 1, 2, 3], # Dimensions to explain
   feature_names = ["MeanTemp", "TotalPrecip", "MonthSin", "MonthCos"])
-plt.close("all")
 
 ```
+
+We see the precipitation value for this observation is assigned a higher than 0.999th quantile anomaly score, while the temperature anomaly score is fairly low.
+
+-   As stated before, I believe the ECOD algorithm is not suitable to this task, as I don't think it takes the interactions between weather and time features into account. The scores for each feature are simply aggregated.
+
+-   Furthermore, the dimensional anomaly scores for the time features are meaningless and potentially misleading, as it's not possible to observe "anomalous" values for these. They are simply there for interaction with the weather measurements.
 
 ### Principal components analysis (PCA)
 
 ```{python CreatePCA}
 
 # Create PCA scorer
-pca = PCA(contamination = 0.01, standardization = True, random_state = 1923)
+pca = PCA(contamination = (1 - q), standardization = True, random_state = 1923)
 scorer_pca = PyODScorer(model = pca, window = 1)
 
 ```
@@ -405,7 +519,7 @@ plot_anom3d("PCA scorer", ts_ottawa, anoms_pca, px_width, px_height, html = True
 
 ```
 
-#### PC & T-SNE plots
+#### Principal components plots with T-SNE
 
 ```{python PCAVariances}
 
@@ -458,9 +572,7 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlots/PCS1.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlots/PCS1.html", width=px_width, height=px_height)
-
+fig.show()
 
 # Principal components plot, PC3-4-5
 fig = px.scatter_3d(
@@ -477,27 +589,24 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlots/PCS2.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlots/PCS2.html", width=px_width, height=px_height)
+fig.show()
 
-
-# # Principal components plot, last 3 PCs
-# fig = px.scatter_3d(
-#   x = pcs[:, -1],
-#   y = pcs[:, -2],
-#   z = pcs[:, -3],
-#   color = anoms_pca.univariate_values().astype(str),
-#   title = "PCA components plot, last 3 PCs",
-#   labels = {
-#     "x": "PC6",
-#     "y": "PC7",
-#     "z": "PC8",
-#     "color": "Anomaly labels"},
-#     width = px_width,
-#     height = px_height
-# )
-# fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
-# IFrame(src="./HtmlPlot/plot.html", width=800, height=600)
+# Principal components plot, last 3 PCs
+fig = px.scatter_3d(
+  x = pcs[:, -1],
+  y = pcs[:, -2],
+  z = pcs[:, -3],
+  color = anoms_pca.univariate_values().astype(str),
+  title = "PCA components plot, last 3 PCs",
+  labels = {
+    "x": "PC6",
+    "y": "PC7",
+    "z": "PC8",
+    "color": "Anomaly labels"},
+    width = px_width,
+    height = px_height
+)
+fig.show()
 
 ```
 
@@ -528,8 +637,7 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlots/TSNE1.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlots/TSNE1.html", width=px_width, height=px_height)
+fig.show()
 
 ```
 
@@ -540,7 +648,7 @@ IFrame(src="./HtmlPlots/TSNE1.html", width=px_width, height=px_height)
 # Create IForest scorer
 iforest = IForest(
   n_estimators= 500, # N. of trees in forest
-  contamination = 0.01,
+  contamination = (1 - q),
   random_state = 1923)
 scorer_iforest = PyODScorer(model = iforest, window = 1)
 
@@ -590,9 +698,9 @@ plt.close("all")
 
 ```
 
-### Autoencoder with PyTorch Lightning
+## Autoencoder with PyTorch Lightning
 
-#### Hyperparameter tuning
+### Hyperparameter tuning
 
 ```{python TuneAutoencoder}
 #| code-fold: true
@@ -667,7 +775,7 @@ trials_nn.to_csv("./OutputData/trials_nnX.csv", index = False)
 
 ```
 
-#### Anomaly detection
+### Anomaly detection
 
 ```{python TrainAutoencoder}
 #| code-fold: true
@@ -772,7 +880,7 @@ plot_anom3d(
 
 ```
 
-#### Latent space plot with T-SNE
+### Latent space plot with T-SNE
 
 ```{python AutoencoderTSNE}
 #| code-fold: true
@@ -812,8 +920,7 @@ fig = px.scatter_3d(
     width = px_width,
     height = px_height
 )
-fig.write_html("./HtmlPlots/TSNE2.html", include_plotlyjs = "cdn")
-IFrame(src="./HtmlPlots/TSNE2.html", width=px_width, height=px_height)
+fig.show()
 
 ```
 

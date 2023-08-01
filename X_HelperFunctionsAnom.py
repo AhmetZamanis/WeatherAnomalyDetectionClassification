@@ -7,7 +7,6 @@ import plotly.express as px
 import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping
 from X_LightningClassesAnom import AutoEncoder, OptunaPruning
-from IPython.display import IFrame
 
 
 def score(ts_train, ts_test, scorer, scaler = None):
@@ -85,6 +84,7 @@ def plot_dist(scorer_name, scores_train, scores_test):
   
   _ = sns.kdeplot(data = df, x = "Scores", hue = "Set")
   _ = plt.title("Distributions of " + scorer_name + " anomaly scores")
+  _ = plt.margins(x = 0.2)
   plt.show()
   plt.close("all")
 
@@ -108,14 +108,7 @@ def plot_anom3d(scorer_name, ts, anoms, px_width, px_height, html = False):
     width = px_width,
     height = px_height
   )
-  
-  if html:
-    filename = "./HtmlPlots/" + scorer_name + "_anoms.html"
-    fig.write_html(filename, include_plotlyjs = "cdn")
-    IFrame(src=filename, width=px_width, height=px_height)
-  
-  else:
-    fig.show()
+  fig.show()
 
 
 def plot_detection(scores_name, quantile, ts, scores, anoms):
@@ -124,7 +117,7 @@ def plot_detection(scores_name, quantile, ts, scores, anoms):
   colors for anomalous & non-anomalous time steps.
   """
   
-  q_str = str(int(quantile * 100))
+  q_str = str(quantile)
   
   # Retrieve dates, variables and anomaly labels in dataframes, separately for
 # positive and negative observations
@@ -159,7 +152,7 @@ def plot_detection(scores_name, quantile, ts, scores, anoms):
 
   # Plot original series, colored by anomalous & non-anomalous
   fig, ax = plt.subplots(3, sharex = True)
-  _ = fig.suptitle("Anomaly detections with " + q_str + "th percentile " + scores_name + "\nBlue = Anomalous days")
+  _ = fig.suptitle("Anomaly detections with " + q_str + "th quantile " + scores_name + "\nBlue = Anomalous days")
 
   _ = sns.lineplot(data = df_negative,  x = "Date",  y = scores_name, ax = ax[0])
   _ = sns.lineplot(data = df_positive,  x = "Date",  y = scores_name, ax = ax[0])

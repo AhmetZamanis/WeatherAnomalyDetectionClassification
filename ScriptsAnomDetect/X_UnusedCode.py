@@ -60,3 +60,39 @@ gp_edmonton_temp = model_gp.filter(ts_edmonton["MEAN_TEMPERATURE_EDMONTON"])
 # from IPython.display import IFrame
 # fig.write_html("./HtmlPlot/plot.html", include_plotlyjs = "cdn")
 # IFrame(src="./HtmlPlot/plot.html", width=700, height=600)
+
+
+
+
+# # Tunable autoencoder layers
+# 
+# # Define hyperparameters
+#     self.input_size = hyperparams_dict["input_size"]
+#     self.hidden_size = hyperparams_dict["hidden_size"]
+#     self.latent_size = hyperparams_dict["latent_size"]
+#     self.learning_rate = hyperparams_dict["learning_rate"]
+#     self.dropout = hyperparams_dict["dropout"]
+#     
+#     # Define architecture 
+#     
+#     # Encoder
+#     self.encoder = torch.nn.Sequential(
+#       torch.nn.Linear(self.input_size, self.hidden_size), # Hidden 1
+#       torch.nn.SELU(), # Activation 1
+#       torch.nn.AlphaDropout(self.dropout), # Dropout 1
+#       torch.nn.Linear(self.hidden_size, self.latent_size), # Hidden 2
+#       torch.nn.SELU(), # Activation 2
+#       torch.nn.AlphaDropout(self.dropout) # Dropout 2
+#     )
+#     
+#     # Decoder
+#     self.decoder = torch.nn.Sequential(
+#       torch.nn.Linear(self.latent_size, self.hidden_size), # Hidden 1
+#       torch.nn.SELU(), # Activation 1
+#       torch.nn.AlphaDropout(self.dropout), # Dropout 1
+#       torch.nn.Linear(self.hidden_size, self.input_size) # Hidden 2 (output, no activation)
+#     )
+
+
+# hidden_size = trial.suggest_int("hidden_size", 2, 6, step = 2)
+# latent_size = trial.suggest_int("latent_size", 1, (hidden_size - 1))

@@ -49,17 +49,15 @@ val_loader = torch.utils.data.DataLoader(
 def objective_nn(trial, train_loader, val_loader):
 
   # Define parameter ranges to tune over & suggest param set for trial
-  hidden_size = trial.suggest_int("hidden_size", 2, 6, step = 2)
-  latent_size = trial.suggest_int("latent_size", 1, (hidden_size - 1))
   learning_rate = trial.suggest_float("learning_rate", 5e-4, 5e-2)
+  lr_decay = trial.suggest_float("lr_decay", 0.9, 1)
   dropout = trial.suggest_float("dropout", 1e-4, 0.2)
 
   # Create hyperparameters dict
   hyperparams_dict = {
       "input_size": ts_train.values().shape[1],
-      "hidden_size": hidden_size,
-      "latent_size": latent_size,
       "learning_rate": learning_rate,
+      "lr_decay": lr_decay,
       "dropout": dropout
     }
 
@@ -98,15 +96,14 @@ trials_nn.to_csv("./OutputData/trials_nnX.csv", index = False)
 
 
 # Import best trial
-best_trial_nn = pd.read_csv("./OutputData/trials_nn1.csv").iloc[0,]
+best_trial_nn = pd.read_csv("./OutputData/trials_nn2.csv").iloc[0,]
 
 
 # Retrieve best hyperparameters
 hyperparams_dict = {
       "input_size": ts_train.values().shape[1],
-      "hidden_size": best_trial_nn["params_hidden_size"],
-      "latent_size": best_trial_nn["params_latent_size"],
       "learning_rate": best_trial_nn["params_learning_rate"],
+      "lr_decay": best_trial_nn["params_lr_decay"],
       "dropout": best_trial_nn["params_dropout"]
     }
 
@@ -182,7 +179,7 @@ plot_dist(scorer_name, scores_train, scores_test)
 
 
 # 3D anomalies plot
-plot_anom3d(scorer_name, ts_ottawa, anoms)
+plot_anom3d(scorer_name, ts_ottawa, anoms, px_width, px_height)
 # Only a few highest precip. days in summer & fall are labeled as anomalies,
 # along with many "false" anomalies in spring & fall. Maybe the best performance
 # with a higher threshold?

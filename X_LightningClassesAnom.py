@@ -54,10 +54,14 @@ class AutoEncoder(L.LightningModule):
     
     # Define hyperparameters
     self.input_size = hyperparams_dict["input_size"]
-    self.hidden_size = hyperparams_dict["hidden_size"]
-    self.latent_size = hyperparams_dict["latent_size"]
     self.learning_rate = hyperparams_dict["learning_rate"]
+    self.lr_decay = hyperparams_dict["lr_decay"]
     self.dropout = hyperparams_dict["dropout"]
+    
+    # Define parameters
+    self.hidden_size = int(self.input_size * 3 / 4) # Reduce dimensions to x0.75
+    self.latent_size = int(self.input_size / 2) # Reduce dimensions to half
+    
     
     # Define architecture 
     
@@ -159,8 +163,9 @@ class AutoEncoder(L.LightningModule):
     # Adam optimizer
     optimizer = torch.optim.Adam(self.parameters(), lr = self.learning_rate)
     
-    # Plateau LR scheduler
-    lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer) 
+     # Exponential LR scheduler
+    lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
+      optimizer, gamma = self.lr_decay) 
     
     return {
     "optimizer": optimizer,

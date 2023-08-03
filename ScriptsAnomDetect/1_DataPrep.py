@@ -23,6 +23,8 @@ plt.rcParams['figure.dpi'] = 300
 plt.rcParams['savefig.dpi'] = 300
 plt.rcParams["figure.autolayout"] = True
 sns.set_style("darkgrid")
+px_width = 800
+px_height = 800
 
 
 # Load raw data (package liac-arff)

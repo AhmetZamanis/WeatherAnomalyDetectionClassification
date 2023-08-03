@@ -31,5 +31,5 @@ scaler = Scaler(MinMaxScaler(feature_range = feature_range))
 
 
 # Create quantile detector
-q = 0.99
+q = 0.999
 detector = QuantileDetector(high_quantile = q)

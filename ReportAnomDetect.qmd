@@ -274,7 +274,7 @@ plot_dist("K-means scorer", scores_train_kmeans, scores_test_kmeans)
 
 The K-means anomaly scores are distributed similarly, though the post-1980 period does have a bit more of the higher-scored observations, and a bit less of the average-scored observations.
 
-Next, we'll plot all observations in a 3D scatterplot, with our weather variables and the month as our three dimensions. We'll color the observations by their anomaly labels. The interactive plot can be moved around by clicking and holding.
+Next, we'll plot all observations in a 3D scatterplot, with our weather variables and the month as our three dimensions. We'll color the observations by their anomaly labels. The interactive plot can be moved around by clicking and holding, and zoomed with the mouse wheel.
 
 ```{python KMeansPlot3D}
 
@@ -417,7 +417,11 @@ ECOD estimates a non-parametric eCDF from each dimension (feature) in the traini
 
 -   Tail probabilities are also estimated for each dimension. For each observation, the tail probabilities are used to calculate a dimensional anomaly score. These are then aggregated.
 
--   ECOD is simple & efficient, with no parameters to choose. However, I believe the nature of the algorithm should not be able to capture the interactions in our multivariate time series (weather measurements dependent on the time features).
+    -   The underlying assumption is that anomalous values will lie at the tails of the eCDF.
+
+-   ECOD is simple & efficient, with no parameters to choose. However, I believe the nature of the algorithm should not be able to capture the interactions in our multivariate time series.
+
+    -   For example, when evaluated alone, the temperature and precipitation values for a day could be normal compared to the entire distribution for each feature. But their combination, along with the observation date, could make them anomalies.
 
 ```{python CreateECOD}
 
@@ -461,7 +465,7 @@ Indeed, we see the anomaly scores for the flagged anomalies are fairly close to 
 
 -   Looking at the 3D anomalies plot, ECOD still flags some of the rainy summer observations, but misses quite a few. There are also numerous flagged observations that seem fairly normal, especially in December.
 
--   
+-   Of course, another factor is the quantile we use for the detection threshold. With an even higher quantile, we could end up with only a few anomalies in the summer months.
 
 One intuitive feature of the PyOD ECOD implementation is the ability to explain each training point's anomaly scoring with a dimensional outlier score plot. We'll view the plot for the highest precipitation day in the training data, which was assigned the highest training anomaly score by the previous algorithms.
 
@@ -479,11 +483,17 @@ scorer_ecod.model.explain_outlier(
 
 We see the precipitation value for this observation is assigned a higher than 0.999th quantile anomaly score, while the temperature anomaly score is fairly low.
 
--   As stated before, I believe the ECOD algorithm is not suitable to this task, as I don't think it takes the interactions between weather and time features into account. The scores for each feature are simply aggregated.
+-   As stated before, I believe the ECOD algorithm is not very suitable to this task, as I don't think it takes the interactions between weather and time features into account. The scores for each feature are simply aggregated.
 
--   Furthermore, the dimensional anomaly scores for the time features are meaningless and potentially misleading, as it's not possible to observe "anomalous" values for these. They are simply there for interaction with the weather measurements.
+-   The dimensional anomaly scores for the time features are meaningless and potentially misleading when aggregated, as it's not possible to observe "anomalous" values for these. They are simply an encoding of the observation date, and are meant to interact with the weather measurements.
 
 ### Principal components analysis (PCA)
+
+PCA is mainly used as a dimensionality reduction method: Given an N number of features, it outputs N principal components that aim to capture as much variation as possible with the fewest number of uncorrelated components.
+
+-   PCA constructs a hyperplane of eigenvectors from the input features. Anomaly scores can be computed based on the distances of each observation from this hyperplane.
+
+-   Instead of scaling our features between -1 and 1, we'll use the `standardization = True` argument to center the data around a zero mean and scale it to unit variance.
 
 ```{python CreatePCA}
 
@@ -519,7 +529,15 @@ plot_anom3d("PCA scorer", ts_ottawa, anoms_pca, px_width, px_height, html = True
 
 ```
 
+Similar to the K-means and GMM approaches, the PCA anomaly scorer flags warm days that are unusually wet as anomalies, and the differences between scores for anomalous and non-anomalous observations are large.
+
+-   Similar to the GMM scorer, the anomaly score distributions are very right-skewed.
+
+-   Looking at the 3D anomalies plot, the PCA scorer restricts anomaly flags mostly to summer days, and some fall days.
+
 #### Principal components plots with T-SNE
+
+PCA is mainly used as a dimensionality reduction & feature selection method, and we can extract quite a bit more intuition from it. We'll start by printing the variances explained by each principal component.
 
 ```{python PCAVariances}
 
@@ -529,6 +547,10 @@ pc_variances = [round(x, 2) for x in pc_variances]
 pc_variances
 
 ```
+
+Only the first 2 PCs explain almost 85% of the variance in our data. This is not surprising as 6 of our 8 input features are different encodings of time, highly correlated with one another.
+
+Using a heatplot, we can examine the PC loadings: How much each input feature contributes to each PC.
 
 ```{python PCAHeatplot}
 #| code-fold: true
@@ -547,6 +569,10 @@ plt.show()
 plt.close("all")
 
 ```
+
+We see PC1 is mostly made up of temperature & time values. PC2 mostly captures information from the time values, while PC3 and PC4 are dominated by precipitation and temperature values respectively.
+
+We can plot the PCs in 3D scatterplots, three at a time, and color the observations by anomaly label.
 
 ```{python PCA3DPlots}
 #| code-fold: true
@@ -610,6 +636,30 @@ fig.show()
 
 ```
 
+Looking at the first plot for PCs 1-3, we can clearly see the temporal structure of the data represented in just 3 dimensions.
+
+-   Each of the pillar-like, distinct groups of observations in the plot likely represent one month of the year.
+
+-   The circular shape is due to the cyclical nature of the time variables, such as months or days in a year. We could also say the temperature values, which contribute mainly to PC1, also have a cyclical nature.
+
+-   We can see anomalies exclusively belong to certain groups, i.e. certain months.
+
+-   The most discriminative dimension when it comes to separating anomalies from normal observations is PC3, which is practically just the precipitation values.
+
+Similarly in the second plot, for PCs 3-5, we see PC3 is the most discriminative dimension. We also see the anomalies are constrained to a certain range in the PC4 dimension, which is made up by the temperature & time values.
+
+The third plot, for PCs 6-8, seems to show these PCs are not very useful in separating anomalies from normal observations. Since these PCs seem to have no contribution from the weather features, the shapes are likely not meaningful.
+
+One more thing we can do is apply T-SNE to the PCs, and reduce them further to only 3 dimensions.
+
+-   T-SNE stands for t-distributed stochastic neighbor embedding. It is a non-linear dimensionality reduction method that usually outputs 2 or 3 dimensions for data visualization purposes.
+
+    -   The algorithm finds the multi-dimensional similarities of each pair of observations and converts them to joint probabilities in a Gaussian distribution. Similar pairs have a higher probability, and vice versa.
+
+    -   Then the same is done for values in the embedded (2 or 3D) space, but assuming a heavy-tailed Student's t-distribution. The algorithm then tries to minimize the difference between the two joint probabilities.
+
+    -   T-SNE is computationally expensive, non-deterministic, and has some parameters that may affect the solution. For high-dimensional data, it's suggested to first apply PCA (or another dimensionality reduction method), then apply T-SNE to the fewer number of remaining dimensions.
+
 ```{python PCATSNE}
 #| code-fold: true
 #| code-summary: "Show code to generate 3D T-SNE plot"
@@ -641,7 +691,21 @@ fig.show()
 
 ```
 
+The T-SNE reduction results in a very interesting figure.
+
+-   It looks like there are many smaller clusters of observations, maybe representing sequences of particular lengths, such as months of a particular year. Some of these clusters look big enough to represent sequences close to a year (I did not try to count the clusters, but there are 80 years in the data).
+
+-   The flagged anomalies are at the very center of this shape (try zooming in), apparently forming their own loose cluster. There are non-flagged points fairly close to the anomalies, which seem to form other, smaller loose clusters.
+
 ### Isolation forest
+
+The IForest algorithm is based on the premise that isolating an anomalous data point is easier than isolating normal points.
+
+-   For each datapoint, a random feature is selected, and a random split value is selected between the minimum and maximum for the feature. This is repeated until the datapoint is isolated from all other datapoints with different values. This process can be represented as a decision tree.
+
+-   The shorter the "isolation tree path", the more anomalous the datapoint is. The final anomaly scores are averaged from a forest of such random trees. We'll build 500 trees instead of the default 100.
+
+-   By default, the IForest algorithm will sample 256 datapoints to build each tree in the forest. We won't sample features, as we want the time variables to always interact with the measurement variables.
 
 ```{python CreateIForest}
 
@@ -682,6 +746,22 @@ plot_anom3d(
 
 ```
 
+The IForest anomaly scorer does not assign much higher scores to anomalous points, compared to normal observations. The anomalous points are still on the warmer and more rainy side, but less so compared to K-means and GMM anomalies.
+
+-   Interestingly, the post-2000 day with the highest precipitation is not flagged as an anomaly.
+
+-   Somewhat similar to ECOD, IForest seems to flag anomalies all over the year, some of them fairly questionable. This suggests the randomness in the algorithm is not very suitable for finding interactions between variables, though it's better than ECOD.
+
+    -   It also flags some points as anomalies, while missing other points very close to it, or even more anomalous.
+
+-   The score distributions are less right-skewed, again similar to ECOD. The post-1980 score distribution is a bit higher.
+
+Similar to other tree-based models, we are able to extract feature importance scores from the trained IForest model.
+
+-   Keep in mind these scores evaluate each feature's importance by itself. In our case, the particular combinations of feature values are much more important.
+
+-   The IForest [documentation](https://pyod.readthedocs.io/en/latest/pyod.models.html#module-pyod.models.iforest) also states that the importance values for high-cardinality features can be misleading, such as our day of year features.
+
 ```{python IForestFeatImp}
 #| code-fold: true
 #| code-summary: "Show code to plot IForest feature importances"
@@ -698,9 +778,29 @@ plt.close("all")
 
 ```
 
+Looking at these feature importance scores, it's possible the IForest algorithm made its decisions mostly by looking at the temperature 6 day of year values. This would explain why some high-precipitation anomalies are missed, while days slightly warmer than usual are flagged.
+
 ## Autoencoder with PyTorch Lightning
 
+The last anomaly scorer we'll use is an autoencoder. Put simply, an autoencoder is a neural network that takes in an N number of inputs, compresses them into fewer dimensions than N, and uses the compressed representation to reconstruct the original N inputs.
+
+-   The network starts with an **encoder** structure: Layers which compress the inputs into fewer dimensions. This compressed representation is called the **latent space**.
+
+    -   The layers may get progressively smaller as the inputs progress through the network, enforcing a bottleneck to arrive at the latent space.
+
+-   The latent space representation is fed into the **decoder** structure: Layers which expand the latent space back into the reconstruction of the original inputs.
+
+    -   Usually, the encoder and decoder are symmetrical in terms of architecture.
+
+The autoencoder architectures are used for many tasks, such as dimensionality reduction, denoising data or anomaly detection. In our case, the anomaly scores will simply be the **reconstruction error** for each datapoint: The higher the reconstruction error, the more anomalous a datapoint is.
+
+PyOD does implement several autoencoders, mainly in Keras, and also in PyTorch. However, I wanted to implement one from scratch in PyTorch Lightning, especially because the PyOD one does not offer the option to retrieve the latent space representations. We will use the latent space for visualization, just like we did with principal components.
+
+We'll build a fairly simple autoencoder, with two layers each in the encoder and decoder. See the [Lightning classes script](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/blob/main/X_LightningClassesAnom.py) for more details on the architecture and code.
+
 ### Hyperparameter tuning
+
+We'll tune the hidden layer sizes, the latent space size (which will always be smaller than the hidden layer size), the learning rate and dropout.
 
 ```{python TuneAutoencoder}
 #| code-fold: true
@@ -733,18 +833,17 @@ val_loader = torch.utils.data.DataLoader(
 def objective_nn(trial, train_loader, val_loader):
 
   # Define parameter ranges to tune over & suggest param set for trial
-  hidden_size = trial.suggest_int("hidden_size", 2, 6, step = 2)
-  latent_size = trial.suggest_int("latent_size", 1, (hidden_size - 1))
   learning_rate = trial.suggest_float("learning_rate", 5e-4, 5e-2)
+  lr_decay = trial.suggest_float("lr_decay", 0.9, 1)
   dropout = trial.suggest_float("dropout", 1e-4, 0.2)
 
   # Create hyperparameters dict
   hyperparams_dict = {
       "input_size": ts_train.values().shape[1],
-      "hidden_size": hidden_size,
-      "latent_size": latent_size,
       "learning_rate": learning_rate,
-      "dropout": dropout}
+      "lr_decay": lr_decay,
+      "dropout": dropout
+    }
 
   # Validate hyperparameter set
   score, epoch = validate_nn(hyperparams_dict, train_loader, val_loader, trial)
@@ -783,15 +882,15 @@ trials_nn.to_csv("./OutputData/trials_nnX.csv", index = False)
 
 
 # Import best trial
-best_trial_nn = pd.read_csv("./OutputData/trials_nn1.csv").iloc[0,]
+best_trial_nn = pd.read_csv("./OutputData/trials_nn2.csv").iloc[0,]
 
 # Retrieve best hyperparameters
 hyperparams_dict = {
       "input_size": ts_train.values().shape[1],
-      "hidden_size": best_trial_nn["params_hidden_size"],
-      "latent_size": best_trial_nn["params_latent_size"],
       "learning_rate": best_trial_nn["params_learning_rate"],
-      "dropout": best_trial_nn["params_dropout"]}
+      "lr_decay": best_trial_nn["params_lr_decay"],
+      "dropout": best_trial_nn["params_dropout"]
+    }
 
 
 # Perform preprocessing

@@ -11,7 +11,7 @@ from darts.dataprocessing.transformers.scaler import Scaler
 from darts.ad.scorers.pyod_scorer import PyODScorer
 from darts.ad.detectors.quantile_detector import QuantileDetector
 from X_HelperFunctionsAnom import score, detect, plot_series, plot_dist
-from X_HelperFunctionsAnom import plot_anom3d, plot_detection
+from X_HelperFunctionsAnom import plot_anom3d, plot_detection, plot_tsne
 
 
 # Concatenate time covariates to Ottawa temperature series

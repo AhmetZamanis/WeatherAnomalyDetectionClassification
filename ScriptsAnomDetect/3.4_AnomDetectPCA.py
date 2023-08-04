@@ -8,7 +8,6 @@ exec(open("./ScriptsAnomDetect/3.0_AnomDetectPrep.py").read())
 
 from pyod.models.pca import PCA
 from sklearn.preprocessing import StandardScaler
-from sklearn.manifold import TSNE
 
 
 # Create PCA scorer
@@ -67,8 +66,17 @@ plt.close("all")
 # are decisive in selecting anomalies?
 
 
+# Transform data into PC values
+pc_train = scorer.model.detector_.transform(
+  scorer.model.scaler_.transform(ts_train.values())
+  )
+pc_test = scorer.model.detector_.transform(
+  scorer.model.scaler_.transform(ts_test.values())
+)
+pcs = np.concatenate((pc_train, pc_test), axis = 0)
+
+
 # Principal components plot, first 3 PCs
-pcs = scorer.model.detector_.transform(scorer.model.scaler_.transform(ts_ottawa.values()))
 fig = px.scatter_3d(
   x = pcs[:, 0],
   y = pcs[:, 1],
@@ -120,27 +128,31 @@ fig.show()
 # The plot of the first 3 PCs reflects the cyclical nature of the data.
 
 
+# Standardize & normalize PCs
+std_scaler = StandardScaler()
+pcs_scaled = std_scaler.fit_transform(pcs)
+
+
 # Apply T-SNE to PCs
-scaler = StandardScaler()
-z_scaled = scaler.fit_transform(pcs)
-tsne = TSNE(n_components = 3)
-z_tsne = tsne.fit_transform(z_scaled)
-z_tsne.shape
+# Perp 5: Literal blob, anoms at center
+# Perp 15: Still blobby, but circular strings start to emerge in clusters, anoms at center
+# Perp 30: Clusters even more distinct, some circular some string-like, anoms at center
+# Pert 45: Not too different from 30
+plot_tsne(pcs_scaled, anoms, px_width, px_height, perplexities = [15, 30, 45])
 
 
-# T-SNE dimensions plot
-fig = px.scatter_3d(
-  x = z_tsne[:, 0],
-  y = z_tsne[:, 1],
-  z = z_tsne[:, 2],
-  color = anoms.univariate_values().astype(str),
-  title = "PCA latent space plot (3-dimensional T-SNE)",
-  labels = {
-    "x": "D1",
-    "y": "D2",
-    "z": "D3",
-    "color": "Anomaly labels"}
-)
-fig.show()
-# The plot seems to have many clusters of subsequent strings as sub-manifolds.
-# The anomalies are at the center of the structure, distinct from sub-manifolds.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

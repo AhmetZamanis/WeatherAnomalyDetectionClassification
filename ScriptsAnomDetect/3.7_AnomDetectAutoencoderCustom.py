@@ -92,11 +92,11 @@ study_nn.optimize(
 
 # Retrieve and export trials
 trials_nn = study_nn.trials_dataframe().sort_values("value", ascending = True)
-trials_nn.to_csv("./OutputData/trials_nnX.csv", index = False)
+trials_nn.to_csv("./OutputData/trials_nn3.csv", index = False)
 
 
 # Import best trial
-best_trial_nn = pd.read_csv("./OutputData/trials_nn2.csv").iloc[0,]
+best_trial_nn = pd.read_csv("./OutputData/trials_nn3.csv").iloc[0,]
 
 
 # Retrieve best hyperparameters
@@ -180,15 +180,10 @@ plot_dist(scorer_name, scores_train, scores_test)
 
 # 3D anomalies plot
 plot_anom3d(scorer_name, ts_ottawa, anoms, px_width, px_height)
-# Only a few highest precip. days in summer & fall are labeled as anomalies,
-# along with many "false" anomalies in spring & fall. Maybe the best performance
-# with a higher threshold?
 
 
 # Detections plot
 plot_detection("Autoencoder scores", q, ts_ottawa, scores, anoms)
-# The 2000> days with very high precip. are all scored very highly, but many of
-# the highly scored days seem normal
 
 
 # Get latent space representations
@@ -201,32 +196,31 @@ def get_latent(model, dataloader):
 z_train = get_latent(model, train_score_loader)
 z_test = get_latent(model, test_loader)
 z = np.concatenate((z_train, z_test), axis = 0)
+# scaler = StandardScaler()
+# z_scaled = scaler.fit_transform(z)
 
 
-# Apply T-SNE to latent space
-scaler = StandardScaler()
-z_scaled = scaler.fit_transform(z)
-tsne = TSNE(n_components = 3)
-z_tsne = tsne.fit_transform(z_scaled)
-z_tsne.shape
+# # Apply T-SNE to latent space
+# plot_tsne(z_scaled, anoms, px_width, px_height, perplexities = [15, 30, 60])
 
 
-# Latent space plot
+# Plot latent space representations
 fig = px.scatter_3d(
-  x = z_tsne[:, 0],
-  y = z_tsne[:, 1],
-  z = z_tsne[:, 2],
+  x = z[:, 0],
+  y = z[:, 2],
+  z = z[:, 1],
   color = anoms.univariate_values().astype(str),
-  title = "Autoencoder latent space plot (3-dimensional T-SNE)",
+  title = "Latent space plot",
   labels = {
-    "x": "D1",
-    "y": "D2",
-    "z": "D3",
-    "color": "Anomaly labels"}
+    "x": "Dim1",
+    "y": "Dim2",
+    "z": "Dim3",
+    "color": "Anomaly labels"},
+    width = px_width,
+    height = px_height
 )
 fig.show()
-# The plot seems to have unique string-like manifolds for each month / time period.
-# The sub-manifolds are fewer in number & more joined compared to PCAs.
-# Most anomalies are false anomalies so they don't have distinct separation from
-# the closest manifolds. 
+
+
+
 

@@ -7,6 +7,7 @@ import plotly.express as px
 import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping
 from X_LightningClassesAnom import AutoEncoder, OptunaPruning
+from sklearn.manifold import TSNE
 
 
 def score(ts_train, ts_test, scorer, scaler = None):
@@ -84,12 +85,12 @@ def plot_dist(scorer_name, scores_train, scores_test):
   
   _ = sns.kdeplot(data = df, x = "Scores", hue = "Set")
   _ = plt.title("Distributions of " + scorer_name + " anomaly scores")
-  _ = plt.margins(x = 0.2)
+  _ = plt.margins(x = 0.2, y = 0.5)
   plt.show()
   plt.close("all")
 
 
-def plot_anom3d(scorer_name, ts, anoms, px_width, px_height, html = False):
+def plot_anom3d(scorer_name, ts, anoms, px_width, px_height):
   """
   Plot 3D scatterplot of anomalies.
   """
@@ -165,6 +166,41 @@ def plot_detection(scores_name, quantile, ts, scores, anoms):
 
   plt.show()
   plt.close("all")
+
+
+def plot_tsne(z, anoms, px_width, px_height, perplexities, n_components = 3, n_iter = 5000, random_state = 1923):
+  """
+  Performs T-SNE reductions with the given perplexity values, 3D plots the results
+  colored by anomaly labels.
+  """
+  
+  for p in perplexities:
+    
+    # Perform T-SNE
+    tsne = TSNE(
+      n_components = n_components,
+      perplexity = p,
+      n_iter = n_iter,
+      n_iter_without_progress = int(n_iter / 10),
+      random_state = random_state)
+    z = tsne.fit_transform(z)
+    
+    # Plot the results
+    fig = px.scatter_3d(
+      x = z[:, 0],
+      y = z[:, 1],
+      z = z[:, 2],
+      color = anoms.univariate_values().astype(str),
+      title = "T-SNE plot, perplexity=" + str(p),
+      labels = {
+        "x": "D1",
+        "y": "D2",
+        "z": "D3",
+        "color": "Anomaly labels"},
+      width = px_width,
+      height = px_height
+      )
+    fig.show()
 
 
 def validate_nn(hyperparams_dict, train_loader, val_loader, trial, tol = 1e-4):

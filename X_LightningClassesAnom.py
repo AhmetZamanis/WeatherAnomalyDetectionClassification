@@ -59,9 +59,8 @@ class AutoEncoder(L.LightningModule):
     self.dropout = hyperparams_dict["dropout"]
     
     # Define parameters
-    self.hidden_size = int(self.input_size * 3 / 4) # Reduce dimensions to x0.75
-    self.latent_size = int(self.input_size / 2) # Reduce dimensions to half
-    
+    self.latent_size = 3 # Reduce to 3D
+    self.hidden_size = int(self.latent_size * 2) # Halfway reduction
     
     # Define architecture 
     

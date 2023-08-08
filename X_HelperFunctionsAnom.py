@@ -85,7 +85,8 @@ def plot_dist(scorer_name, scores_train, scores_test):
   
   _ = sns.kdeplot(data = df, x = "Scores", hue = "Set")
   _ = plt.title("Distributions of " + scorer_name + " anomaly scores")
-  _ = plt.margins(x = 0.2, y = 0.5)
+  bottom, top = plt.ylim()
+  _ = plt.ylim(-top * 0.05, top)
   plt.show()
   plt.close("all")
 

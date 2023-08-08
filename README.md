@@ -7,3 +7,6 @@ Multivariate time series anomaly detection using [PyOD](https://github.com/yzhao
 [Full report](https://ahmetzamanis.github.io/WeatherAnomalyDetectionClassification/)
 \
 [Scripts](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/tree/main/ScriptsAnomDetect), [Lightning classes](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/blob/main/X_LightningClassesAnom.py), [functions](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/blob/main/X_HelperFunctionsAnom.py) 
+
+## Time series classification
+TBA

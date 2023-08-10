@@ -201,6 +201,7 @@ OutputData/
 # Quarto
 /.quarto/
 .Rproj.user
+/_site/
 
 # Template Rproj file
 TemplatePortfolioProject.Rproj

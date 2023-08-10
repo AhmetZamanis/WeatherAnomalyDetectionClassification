@@ -1,0 +1,306 @@
+---
+title: "Time series classification - Canadian weather data"
+author: "Ahmet Zamanis"
+format:
+  gfm: 
+    toc: true
+editor: visual
+jupyter: python3
+execute: 
+  warning: false
+---
+
+## Introduction
+
+Refer to data source, code repository
+
+```{python Imports}
+#| code-fold: true
+#| code-summary: "Show imports"
+
+# Data handling
+import pandas as pd
+import numpy as np
+import arff # Installed as liac-arff
+import warnings
+
+# Plotting
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# PyTorch Lightning & Optuna
+import torch
+import lightning as L
+import optuna
+
+# Time series classifiers
+from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
+from sktime.classification.kernel_based import RocketClassifier, Arsenal
+from sktime.classification.dictionary_based import MUSE
+
+# Transformations
+from pyts.image import RecurrencePlot
+from sklearn.preprocessing import OneHotEncoder
+
+# Performance metrics
+from sklearn.metrics import accuracy_score, log_loss
+
+# Custom Lightning classes
+from X_LightningClassesClassif import TrainDataset, TestDataset, CNN, OptunaPruning
+
+# Helper functions
+from X_HelperFunctionsClassif import plot_confusion, scale_dims, get_images, plot_images, validate_cnn
+
+```
+
+```{python Settings}
+#| code-fold: true
+#| code-summary: "Show settings"
+
+# Set print options
+np.set_printoptions(suppress=True, precision=4)
+pd.options.display.float_format = '{:.4f}'.format
+pd.set_option('display.max_columns', None)
+
+# Set plotting options
+plt.rcParams['figure.dpi'] = 300
+plt.rcParams['savefig.dpi'] = 300
+plt.rcParams["figure.autolayout"] = True
+sns.set_style("darkgrid")
+
+# Set Torch settings
+torch.set_default_dtype(torch.float32)
+torch.set_float32_matmul_precision('high')
+L.seed_everything(1923, workers = True)
+warnings.filterwarnings("ignore", ".*does not have many workers.*")
+
+```
+
+## Data preparation
+
+```{python LoadData}
+
+# Load raw data
+raw_data = arff.load(open("./InputData/canadian_climate.arff", "r"))
+
+# Convert to pandas dataframe & view
+df = pd.DataFrame(
+  raw_data["data"], columns = [x[0] for x in raw_data["attributes"]])
+print(df.iloc[:,0:4])
+
+```
+
+```{python CheckMissing}
+
+# Check missing values: Pre-1960 locations: Calgary, Vancouver, Ottawa, Toronto
+pd.isnull(df).sum()
+
+```
+
+```{python LongConvert}
+
+# Wide to long conversion
+df = pd.wide_to_long(
+  df, stubnames = ["MEAN_TEMPERATURE", "TOTAL_PRECIPITATION"],
+  i = "LOCAL_DATE", j = "LOCATION", sep = "_", suffix = r"\w+")
+df = df.reset_index()
+
+# Select observations only for Ottawa, Toronto, Vancouver
+df = df[df["LOCATION"].isin(["OTTAWA", "TORONTO", "VANCOUVER"])]
+
+# Convert LOCAL_DATE to datetime, set index for NA interpolation
+df["LOCAL_DATE"] = pd.to_datetime(df["LOCAL_DATE"])
+df = df.set_index("LOCAL_DATE")
+
+# View long data
+print(df)
+
+```
+
+```{python InterpolateMissing}
+
+# Interpolate missing values in Ottawa, Toronto, Vancouver
+df = df.groupby("LOCATION", group_keys = False).apply(
+  lambda g: g.interpolate(method = "time"))
+df = df.reset_index()
+
+```
+
+```{python CyclicalEncode}
+
+# Add cyclic terms for month, week of year and day of year
+df["month_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.month / 12)
+df["month_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.month / 12)
+df["week_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.isocalendar().week / 53)
+df["week_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.isocalendar().week / 53)
+df["day_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
+df["day_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
+
+```
+
+```{python SequenceConvert}
+#| code-fold: true
+#| code-summary: "Show code to split data into 28-day sequences"
+
+
+# Assign n as one less than the target sequence length
+n = 27
+
+# Add counter for days
+df["DAYCOUNT"] = df.groupby("LOCATION").LOCATION.cumcount().add(1)
+
+# Add rowgroups: A unique number for each n+1 day sequence
+df["ROWGROUP"] = (df["DAYCOUNT"] // (n + 1)).astype(str)
+df = df.drop("DAYCOUNT", axis = 1)
+
+
+# Eliminate rowgroups which are not of length N + 1 per city
+n_rowgroups = len(df["ROWGROUP"].unique())
+rowgroup_lengths = [
+  int(len(df[df["ROWGROUP"] == str(x)]) / 3) for x in range(0, n_rowgroups)]
+rowgroups_to_keep = np.where(np.array(rowgroup_lengths) == n + 1)[0].tolist()
+rowgroups_to_keep = [str(x) for x in rowgroups_to_keep]
+df = df.loc[df["ROWGROUP"].isin(rowgroups_to_keep)]
+
+
+# Retrieve targets for each sequence
+y = df.groupby(["LOCATION", "ROWGROUP"]).head(1)["LOCATION"]
+y = y.reset_index().drop("index", axis = 1).values.flatten()
+
+# Get class labels
+classes = np.unique(y)
+
+
+# Retrieve features as 3Darray of shape (n_sequences, n_dimensions, seq_length)
+
+# Get 2D arrays of (n_dimensions, seq_length) for each sequence
+x = df.groupby(["LOCATION", "ROWGROUP"], as_index = False).apply(
+    lambda g: np.array(
+  [g["MEAN_TEMPERATURE"].values,
+  g["TOTAL_PRECIPITATION"].values,
+  g["month_sin"].values,
+  g["month_cos"].values,
+  g["week_sin"].values,
+  g["week_cos"].values,
+  g["day_sin"].values,
+  g["day_cos"].values
+    ]
+  )
+)
+
+# Get a single 3Darray
+x = np.array([x[i] for i in range(0, len(x))])
+
+# Print data shape
+print("Shape of data (n_sequences, n_dimensions, seq_length): " + str(x.shape))
+
+```
+
+```{python TrainTestSplit}
+#| code-fold: true
+#| code-summary: "Show code to split training & testing data for each city"
+
+
+l = len(y) # Length of entire data, for all 3 cities
+len_test = int(l / 3 * 0.2) # Length of test data for one city
+len_train = int(l / 3 - len_test) # Length of train data for one city
+j = int(l / 3) # Length of entire data for one city
+
+# Get indices for training set, for each city
+idx_train = list(range(0, len_train)) + list(range(j, len_train + j)) + list(range(j * 2, len_train + (j * 2))) 
+
+# Get indices for testing set as the difference from the training set 
+idx_test = list(range(0, l))
+idx_test = list(set(idx_test).difference(idx_train))
+
+# Perform train-test split
+y_train, y_test = y[idx_train], y[idx_test]
+x_train, x_test = x[idx_train], x[idx_test]
+
+# Print data shapes
+print(
+  "Shape of training data (n_sequences, n_dimensions, seq_length): " + 
+  str(x_train.shape))
+print(
+  "Shape of testing data (n_sequences, n_dimensions, seq_length): " + 
+  str(x_test.shape))
+  
+```
+
+### Recurrence plots
+
+```{python TrainValSplit}
+#| code-fold: true
+#| code-summary: "Show code to split training & validation data for each city"
+
+l_train = len(y_train) # Length of training data, for all 3 cities
+len_val = int(l_train / 3 * 0.2) # Length of val. data for one city
+len_tr = int(l_train / 3 - len_val) # Length of train data for one city
+j_train = int(l_train / 3) # Length of training data for one city
+
+# Get indices for training set, for each city
+idx_tr = list(range(0, len_tr)) + list(range(j_train, len_tr + j_train)) + list(range(j_train * 2, len_tr + (j_train * 2)))
+
+# Get indices for validation set as the difference from the training set 
+idx_val = list(range(0, l_train))
+idx_val = list(set(idx_val).difference(idx_tr))
+
+# Perform train-validation split
+y_tr, y_val = y_train[idx_tr], y_train[idx_val]
+x_tr, x_val = x_train[idx_tr], x_train[idx_val]
+
+```
+
+Move recurrence plot code comments to text, refer to helper functions script
+
+```{python GetImages}
+
+# Create RecurrencePlot transformer
+trafo_image = RecurrencePlot()
+
+# Transform the features
+x_train_img, x_test_img = get_images(x_train, x_test, trafo_image)
+x_tr, x_val = get_images(x_tr, x_val, trafo_image)
+
+# The output for 1 sequence is of shape (n_dims, seq_length, seq_length). Each
+# channel is the values of the recurrence plot for one dimension. We have 8 images
+# of 28x28, per 28-day period, per city.
+print("Shape of one image-transformed sequence: " + str(x_train_img[0].shape))
+
+```
+
+```{python PlotImages1}
+
+# Plot the recurrence plot for two consecutive sequences per city, for the weather
+# dimensions. The plot for each sequence is the pairwise similarity matrix of each 
+# trajectory in that sequence. The resulting "images" should identify the city 
+# when compared with other "images" for the same city.
+plot_images(x_train_img, 0, "MeanTemp", 0, 1, j_train)
+plot_images(x_train_img, 1, "TotalPrecip", 0, 1, j_train)
+
+```
+
+```{python PlotImages2}
+
+# The plots for the time dimensions in a period are the same for all cities, as
+# expected.
+plot_images(x_train_img, 2, "MonthSin", 0, 1, j_train)
+plot_images(x_train_img, 3, "MonthCos", 0, 1, j_train)
+
+```
+
+## Time series classification
+
+### K-nearest neighbors with DTW distance
+
+### ROCKET & Arsenal
+
+### WEASELMUSE
+
+### Convolutional neural network with recurrence plots
+
+#### Hyperparameter tuning
+
+#### Final model
+
+## Conclusion

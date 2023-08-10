@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import plotly.express as px
 import arff
 
 from X_HelperFunctionsClassif import plot_confusion, scale_dims
@@ -61,8 +60,8 @@ df = df.reset_index()
 # Add cyclic terms for month, week of year and day of year
 df["month_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.month / 12)
 df["month_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.month / 12)
-df["week_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.week / 53)
-df["week_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.week / 53)
+df["week_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.isocalendar().week / 53)
+df["week_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.isocalendar().week / 53)
 df["day_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 df["day_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 
@@ -77,12 +76,19 @@ df["DAYCOUNT"] = df.groupby("LOCATION").LOCATION.cumcount().add(1)
 df["ROWGROUP"] = (df["DAYCOUNT"] // (n + 1)).astype(str)
 df = df.drop("DAYCOUNT", axis = 1)
 
-# Eliminate rowgroups which are not of length N
-len(df[df["ROWGROUP"] == "0"]) / 3 # Length N
-len(df[df["ROWGROUP"] == "1"]) / 3 # Length N+1
-len(df[df["ROWGROUP"] == "1042"]) / 3 # Length N+1
-len(df[df["ROWGROUP"] == "1043"]) / 3 # Length <N
-df = df.loc[~df["ROWGROUP"].isin(["0", "1043"])]
+# Eliminate rowgroups which are not of length N + 1
+n_rowgroups = len(df["ROWGROUP"].unique())
+rowgroup_lengths = [int(len(df[df["ROWGROUP"] == str(x)]) / 3) for x in range(0, n_rowgroups)]
+rowgroups_to_keep = np.where(np.array(rowgroup_lengths) == n + 1)[0].tolist()
+rowgroups_to_keep = [str(x) for x in rowgroups_to_keep]
+df = df.loc[df["ROWGROUP"].isin(rowgroups_to_keep)]
+
+# len(df[df["ROWGROUP"] == "0"]) / 3 # Length N
+# len(df[df["ROWGROUP"] == "1"]) / 3 # Length N+1
+# len(df[df["ROWGROUP"] == "1042"]) / 3 # Length N+1
+# len(df[df["ROWGROUP"] == "1043"]) / 3 # Length <N
+# df = df.loc[~df["ROWGROUP"].isin(["0", "1043"])]
+
 
 # Retrieve targets for each subsequence
 y = df.groupby(["LOCATION", "ROWGROUP"]).head(1)["LOCATION"]
@@ -112,10 +118,10 @@ x = np.array([x[i] for i in range(0, len(x))])
 # Split train & test (most recent 20% sequences for all cities as test)
 
 # Get indices
-l = len(y)
-len_test = int(l / 3 * 0.2)
-len_train = int(l / 3 - len_test)
-j = int(l / 3)
+l = len(y) # Length of entire data, for all 3 cities
+len_test = int(l / 3 * 0.2) # Length of test data for one city
+len_train = int(l / 3 - len_test) # Length of train data for one city
+j = int(l / 3) # Length of entire data for one city
 idx_train = list(range(0, len_train)) + list(range(j, len_train + j)) + list(range(j * 2, len_train + (j * 2)))
 idx_test = list(range(0, l))
 idx_test = list(set(idx_test).difference(idx_train))

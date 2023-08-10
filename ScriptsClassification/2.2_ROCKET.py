@@ -6,8 +6,7 @@ exec(open("./ScriptsClassification/1_DataPrep.py").read())
 
 
 # from sktime.transformations.panel.rocket import Rocket
-from sktime.classification.kernel_based import RocketClassifier
-from sktime.classification.kernel_based import Arsenal
+from sktime.classification.kernel_based import RocketClassifier, Arsenal
 
 
 # # Perform Rocket transformation and view outputs

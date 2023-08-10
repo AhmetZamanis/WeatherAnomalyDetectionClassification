@@ -4,7 +4,6 @@
 # Source data prep script
 exec(open("./ScriptsClassification/1_DataPrep.py").read())
 
-# from sktime.transformations.compose import ColumnwiseTransformer
 
 from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
 

@@ -16,10 +16,10 @@ trafo_image = RecurrencePlot()
 # Split validation data from training data
 
 # Get indices
-l = len(y_train)
-len_val = int(l / 3 * 0.2)
-len_tr = int(l / 3 - len_val)
-j = int(l / 3)
+l = len(y_train) # Length of training data, for all 3 cities
+len_val = int(l / 3 * 0.2) # Length of val. data for one city
+len_tr = int(l / 3 - len_val) # Length of train data for one city
+j = int(l / 3) # Length of training data for one city
 idx_tr = list(range(0, len_tr)) + list(range(j, len_tr + j)) + list(range(j * 2, len_tr + (j * 2)))
 idx_val = list(range(0, l))
 idx_val = list(set(idx_val).difference(idx_tr))

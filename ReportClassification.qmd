@@ -92,10 +92,12 @@ print(df.iloc[:,0:4])
 
 ```{python CheckMissing}
 
-# Check missing values: Pre-1960 locations: Calgary, Vancouver, Ottawa, Toronto
+# Check missing values
 pd.isnull(df).sum()
 
 ```
+
+Pre-1960 locations: Calgary, Vancouver, Ottawa, Toronto
 
 ```{python LongConvert}
 
@@ -239,32 +241,34 @@ trafo_image = RecurrencePlot()
 # Transform the features
 x_train_img, x_test_img = get_images(x_train, x_test, trafo_image)
 
-# The output for 1 sequence is of shape (n_dims, seq_length, seq_length). Each
-# channel is the values of the recurrence plot for one dimension. We have 8 images
-# of 28x28, per 28-day period, per city.
-print("Shape of one image-transformed sequence: " + str(x_train_img[0].shape))
+# Print data shape 
+print(
+  "Shape of one image-transformed sequence (n_dims, seq_length, seq_length): " + str(x_train_img[0].shape))
 
 ```
+
+For each sequence, we have 8 images of size 28x28.
 
 ```{python PlotImages1}
 
 # Plot the recurrence plot for two consecutive sequences per city, for the weather
-# dimensions. The plot for each sequence is the pairwise similarity matrix of each 
-# trajectory in that sequence. The resulting "images" should identify the city 
-# when compared with other "images" for the same city.
+# dimensions
 plot_images(x_train_img, 0, "MeanTemp", 0, 1, len_train)
 plot_images(x_train_img, 1, "TotalPrecip", 0, 1, len_train)
 
 ```
 
+The plot for each sequence is the pairwise similarity matrix of each trajectory in that sequence. The resulting "images" should identify the city when compared with other "images" for the same city.
+
 ```{python PlotImages2}
 
-# The plots for the time dimensions in a period are the same for all cities, as
-# expected.
+# Plot the recurrence plot for two consecutive sequences per city, for the month dimensions
 plot_images(x_train_img, 2, "MonthSin", 0, 1, len_train)
 plot_images(x_train_img, 3, "MonthCos", 0, 1, len_train)
 
 ```
+
+The plots for the time dimensions in a period are the same for all cities, as expected.
 
 ## Time series classification
 
@@ -273,7 +277,9 @@ plot_images(x_train_img, 3, "MonthCos", 0, 1, len_train)
 ```{python CreateKNN}
 
 # Create KNN classifier
-model_knn = KNeighborsTimeSeriesClassifier(n_neighbors = 3, n_jobs = -1)
+model_knn = KNeighborsTimeSeriesClassifier(
+  n_neighbors = 3, # N. of nearest neighbors to compare each observation
+  n_jobs = -1)
 
 ```
 
@@ -285,7 +291,7 @@ preds_knn, probs_knn, acc_knn, loss_knn = test_model(
   
 # View predicted probabilities for each city
 print("KNN classifier predicted probabilities for each city:")
-pd.DataFrame(probs_knn, columns = ["Ottawa", "Toronto", "Vancouver"])
+print(pd.DataFrame(probs_knn, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
 ```
 
@@ -297,10 +303,13 @@ Move code comments to text
 
 # Create RocketClassifier
 model_rocket = RocketClassifier(
-  use_multivariate = "yes", n_jobs = -1, random_state = 1923)
+  use_multivariate = "yes", # Use multivariate ROCKET transforms
+  n_jobs = -1, random_state = 1923)
   
 # Create Arsenal classifier (probabilistic ROCKET ensemble, memory intensive)
-model_arsenal = Arsenal(random_state = 1923)
+model_arsenal = Arsenal(
+  rocket_transform = "multirocket", # Use multivariate ROCKET transforms
+  random_state = 1923)
 
 ```
 
@@ -312,7 +321,7 @@ preds_rocket, probs_rocket, acc_rocket, loss_rocket = test_model(
 
 # View predicted probabilities for each city (ROCKET is non-probabilistic)
 print("ROCKET classifier predicted probabilities for each city:")
-pd.DataFrame(probs_rocket, columns = ["Ottawa", "Toronto", "Vancouver"])
+print(pd.DataFrame(probs_rocket, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
 ```
 
@@ -324,7 +333,7 @@ preds_arsenal, probs_arsenal, acc_arsenal, loss_arsenal = test_model(
 
 # View predicted probabilities for each city
 print("Arsenal classifier predicted probabilities for each city:")
-pd.DataFrame(probs_arsenal, columns = ["Ottawa", "Toronto", "Vancouver"])
+print(pd.DataFrame(probs_arsenal, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
 ```
 
@@ -348,7 +357,7 @@ preds_muse, probs_muse, acc_muse, loss_muse = test_model(
   
 # View predicted probabilities for each city
 print("MUSE classifier predicted probabilities for each city:")
-pd.DataFrame(probs_muse, columns = ["Ottawa", "Toronto", "Vancouver"])
+print(pd.DataFrame(probs_muse, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
 ```
 
@@ -428,7 +437,7 @@ loss_cnn = log_loss(y_test_img, probs_cnn)
 
 # View predicted probabilities for each city
 print("CNN classifier predicted probabilities for each city:")
-pd.DataFrame(probs_cnn, columns = ["Ottawa", "Toronto", "Vancouver"])
+print(pd.DataFrame(probs_cnn, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
 ```
 
@@ -448,17 +457,15 @@ loss_random = log_loss(y_test, probs_random)
 
 # Gather performance metrics as dictionary
 dict_metrics = {
-  "Accuracy": [
-    round(x, 4) for x in [
-      p, acc_knn, acc_rocket, acc_arsenal, acc_muse, acc_cnn]],
-  "Log loss": [
-    round(x, 4) for x in [
+  "Accuracy": [round(x, 4) for x in [
+    p, acc_knn, acc_rocket, acc_arsenal, acc_muse, acc_cnn]],
+  "Log loss": [round(x, 4) for x in [
       loss_random, loss_knn, loss_rocket, loss_arsenal, loss_muse, loss_cnn]]   
 }
 
 # Print as table
-pd.DataFrame(dict_metrics, index = [
-  "Random choice", "kNN with DTW", "ROCKET", "Arsenal", "MUSE", "CNN"])
+print(pd.DataFrame(dict_metrics, index = [
+  "Random choice", "kNN with DTW", "ROCKET", "Arsenal", "MUSE", "CNN"]))
 
 ```
 

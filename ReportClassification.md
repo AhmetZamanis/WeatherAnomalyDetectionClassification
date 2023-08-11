@@ -134,7 +134,7 @@ print(df.iloc[:,0:4])
     [29221 rows x 4 columns]
 
 ``` python
-# Check missing values: Pre-1960 locations: Calgary, Vancouver, Ottawa, Toronto
+# Check missing values
 pd.isnull(df).sum()
 ```
 
@@ -166,6 +166,8 @@ pd.isnull(df).sum()
     MEAN_TEMPERATURE_WINNIPEG          124
     TOTAL_PRECIPITATION_WINNIPEG       247
     dtype: int64
+
+Pre-1960 locations: Calgary, Vancouver, Ottawa, Toronto
 
 ``` python
 # Wide to long conversion
@@ -325,19 +327,18 @@ trafo_image = RecurrencePlot()
 # Transform the features
 x_train_img, x_test_img = get_images(x_train, x_test, trafo_image)
 
-# The output for 1 sequence is of shape (n_dims, seq_length, seq_length). Each
-# channel is the values of the recurrence plot for one dimension. We have 8 images
-# of 28x28, per 28-day period, per city.
-print("Shape of one image-transformed sequence: " + str(x_train_img[0].shape))
+# Print data shape 
+print(
+  "Shape of one image-transformed sequence (n_dims, seq_length, seq_length): " + str(x_train_img[0].shape))
 ```
 
-    Shape of one image-transformed sequence: (8, 28, 28)
+    Shape of one image-transformed sequence (n_dims, seq_length, seq_length): (8, 28, 28)
+
+For each sequence, we have 8 images of size 28x28.
 
 ``` python
 # Plot the recurrence plot for two consecutive sequences per city, for the weather
-# dimensions. The plot for each sequence is the pairwise similarity matrix of each 
-# trajectory in that sequence. The resulting "images" should identify the city 
-# when compared with other "images" for the same city.
+# dimensions
 plot_images(x_train_img, 0, "MeanTemp", 0, 1, len_train)
 plot_images(x_train_img, 1, "TotalPrecip", 0, 1, len_train)
 ```
@@ -346,9 +347,12 @@ plot_images(x_train_img, 1, "TotalPrecip", 0, 1, len_train)
 
 ![](ReportClassification_files/figure-commonmark/cell-12-output-2.png)
 
+The plot for each sequence is the pairwise similarity matrix of each
+trajectory in that sequence. The resulting “images” should identify the
+city when compared with other “images” for the same city.
+
 ``` python
-# The plots for the time dimensions in a period are the same for all cities, as
-# expected.
+# Plot the recurrence plot for two consecutive sequences per city, for the month dimensions
 plot_images(x_train_img, 2, "MonthSin", 0, 1, len_train)
 plot_images(x_train_img, 3, "MonthCos", 0, 1, len_train)
 ```
@@ -357,13 +361,18 @@ plot_images(x_train_img, 3, "MonthCos", 0, 1, len_train)
 
 ![](ReportClassification_files/figure-commonmark/cell-13-output-2.png)
 
+The plots for the time dimensions in a period are the same for all
+cities, as expected.
+
 ## Time series classification
 
 ### K-nearest neighbors with DTW distance
 
 ``` python
 # Create KNN classifier
-model_knn = KNeighborsTimeSeriesClassifier(n_neighbors = 3, n_jobs = -1)
+model_knn = KNeighborsTimeSeriesClassifier(
+  n_neighbors = 3, # N. of nearest neighbors to compare each observation
+  n_jobs = -1)
 ```
 
 ``` python
@@ -373,105 +382,24 @@ preds_knn, probs_knn, acc_knn, loss_knn = test_model(
   
 # View predicted probabilities for each city
 print("KNN classifier predicted probabilities for each city:")
-pd.DataFrame(probs_knn, columns = ["Ottawa", "Toronto", "Vancouver"])
+print(pd.DataFrame(probs_knn, columns = ["Ottawa", "Toronto", "Vancouver"]))
 ```
 
     KNN classifier predicted probabilities for each city:
+         Ottawa  Toronto  Vancouver
+    0    0.6667   0.3333     0.0000
+    1    0.6667   0.3333     0.0000
+    2    0.0000   0.6667     0.3333
+    3    0.0000   0.3333     0.6667
+    4    0.0000   1.0000     0.0000
+    ..      ...      ...        ...
+    619  0.0000   0.0000     1.0000
+    620  0.0000   0.0000     1.0000
+    621  0.0000   0.0000     1.0000
+    622  0.0000   0.0000     1.0000
+    623  0.0000   0.0000     1.0000
 
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Ottawa</th>
-      <th>Toronto</th>
-      <th>Vancouver</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0.6667</td>
-      <td>0.3333</td>
-      <td>0.0000</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>0.6667</td>
-      <td>0.3333</td>
-      <td>0.0000</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>0.0000</td>
-      <td>0.6667</td>
-      <td>0.3333</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>0.0000</td>
-      <td>0.3333</td>
-      <td>0.6667</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>0.0000</td>
-      <td>1.0000</td>
-      <td>0.0000</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>619</th>
-      <td>0.0000</td>
-      <td>0.0000</td>
-      <td>1.0000</td>
-    </tr>
-    <tr>
-      <th>620</th>
-      <td>0.0000</td>
-      <td>0.0000</td>
-      <td>1.0000</td>
-    </tr>
-    <tr>
-      <th>621</th>
-      <td>0.0000</td>
-      <td>0.0000</td>
-      <td>1.0000</td>
-    </tr>
-    <tr>
-      <th>622</th>
-      <td>0.0000</td>
-      <td>0.0000</td>
-      <td>1.0000</td>
-    </tr>
-    <tr>
-      <th>623</th>
-      <td>0.0000</td>
-      <td>0.0000</td>
-      <td>1.0000</td>
-    </tr>
-  </tbody>
-</table>
-<p>624 rows × 3 columns</p>
-</div>
+    [624 rows x 3 columns]
 
 ### ROCKET & Arsenal
 
@@ -480,10 +408,13 @@ Move code comments to text
 ``` python
 # Create RocketClassifier
 model_rocket = RocketClassifier(
-  use_multivariate = "yes", n_jobs = -1, random_state = 1923)
+  use_multivariate = "yes", # Use multivariate ROCKET transforms
+  n_jobs = -1, random_state = 1923)
   
 # Create Arsenal classifier (probabilistic ROCKET ensemble, memory intensive)
-model_arsenal = Arsenal(random_state = 1923)
+model_arsenal = Arsenal(
+  rocket_transform = "multirocket", # Use multivariate ROCKET transforms
+  random_state = 1923)
 ```
 
 ``` python
@@ -493,105 +424,24 @@ preds_rocket, probs_rocket, acc_rocket, loss_rocket = test_model(
 
 # View predicted probabilities for each city (ROCKET is non-probabilistic)
 print("ROCKET classifier predicted probabilities for each city:")
-pd.DataFrame(probs_rocket, columns = ["Ottawa", "Toronto", "Vancouver"])
+print(pd.DataFrame(probs_rocket, columns = ["Ottawa", "Toronto", "Vancouver"]))
 ```
 
     ROCKET classifier predicted probabilities for each city:
+         Ottawa  Toronto  Vancouver
+    0    1.0000   0.0000     0.0000
+    1    0.0000   1.0000     0.0000
+    2    0.0000   0.0000     1.0000
+    3    1.0000   0.0000     0.0000
+    4    1.0000   0.0000     0.0000
+    ..      ...      ...        ...
+    619  1.0000   0.0000     0.0000
+    620  0.0000   0.0000     1.0000
+    621  0.0000   1.0000     0.0000
+    622  0.0000   0.0000     1.0000
+    623  0.0000   0.0000     1.0000
 
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Ottawa</th>
-      <th>Toronto</th>
-      <th>Vancouver</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>1.0000</td>
-      <td>0.0000</td>
-      <td>0.0000</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>0.0000</td>
-      <td>1.0000</td>
-      <td>0.0000</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>0.0000</td>
-      <td>0.0000</td>
-      <td>1.0000</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>1.0000</td>
-      <td>0.0000</td>
-      <td>0.0000</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>1.0000</td>
-      <td>0.0000</td>
-      <td>0.0000</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>619</th>
-      <td>1.0000</td>
-      <td>0.0000</td>
-      <td>0.0000</td>
-    </tr>
-    <tr>
-      <th>620</th>
-      <td>0.0000</td>
-      <td>0.0000</td>
-      <td>1.0000</td>
-    </tr>
-    <tr>
-      <th>621</th>
-      <td>0.0000</td>
-      <td>1.0000</td>
-      <td>0.0000</td>
-    </tr>
-    <tr>
-      <th>622</th>
-      <td>0.0000</td>
-      <td>0.0000</td>
-      <td>1.0000</td>
-    </tr>
-    <tr>
-      <th>623</th>
-      <td>0.0000</td>
-      <td>0.0000</td>
-      <td>1.0000</td>
-    </tr>
-  </tbody>
-</table>
-<p>624 rows × 3 columns</p>
-</div>
+    [624 rows x 3 columns]
 
 ``` python
 # Test Arsenal classifier
@@ -600,105 +450,24 @@ preds_arsenal, probs_arsenal, acc_arsenal, loss_arsenal = test_model(
 
 # View predicted probabilities for each city
 print("Arsenal classifier predicted probabilities for each city:")
-pd.DataFrame(probs_arsenal, columns = ["Ottawa", "Toronto", "Vancouver"])
+print(pd.DataFrame(probs_arsenal, columns = ["Ottawa", "Toronto", "Vancouver"]))
 ```
 
     Arsenal classifier predicted probabilities for each city:
+         Ottawa  Toronto  Vancouver
+    0    0.7526   0.2474    -0.0000
+    1    0.7508   0.2492    -0.0000
+    2    0.8410   0.1590    -0.0000
+    3    0.7564   0.2436    -0.0000
+    4    0.6414   0.3586    -0.0000
+    ..      ...      ...        ...
+    619 -0.0000   0.0429     0.9571
+    620 -0.0000  -0.0000     1.0000
+    621 -0.0000  -0.0000     1.0000
+    622 -0.0000  -0.0000     1.0000
+    623 -0.0000  -0.0000     1.0000
 
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Ottawa</th>
-      <th>Toronto</th>
-      <th>Vancouver</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0.8797</td>
-      <td>0.0803</td>
-      <td>0.0399</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>0.8406</td>
-      <td>0.1594</td>
-      <td>-0.0000</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>0.0809</td>
-      <td>-0.0000</td>
-      <td>0.9191</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>0.8005</td>
-      <td>-0.0000</td>
-      <td>0.1995</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>0.6412</td>
-      <td>0.3181</td>
-      <td>0.0407</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>619</th>
-      <td>0.3223</td>
-      <td>0.3991</td>
-      <td>0.2786</td>
-    </tr>
-    <tr>
-      <th>620</th>
-      <td>0.0401</td>
-      <td>-0.0000</td>
-      <td>0.9599</td>
-    </tr>
-    <tr>
-      <th>621</th>
-      <td>0.1202</td>
-      <td>0.7997</td>
-      <td>0.0801</td>
-    </tr>
-    <tr>
-      <th>622</th>
-      <td>-0.0000</td>
-      <td>0.0400</td>
-      <td>0.9600</td>
-    </tr>
-    <tr>
-      <th>623</th>
-      <td>-0.0000</td>
-      <td>-0.0000</td>
-      <td>1.0000</td>
-    </tr>
-  </tbody>
-</table>
-<p>624 rows × 3 columns</p>
-</div>
+    [624 rows x 3 columns]
 
 ### MUSE
 
@@ -717,105 +486,24 @@ preds_muse, probs_muse, acc_muse, loss_muse = test_model(
   
 # View predicted probabilities for each city
 print("MUSE classifier predicted probabilities for each city:")
-pd.DataFrame(probs_muse, columns = ["Ottawa", "Toronto", "Vancouver"])
+print(pd.DataFrame(probs_muse, columns = ["Ottawa", "Toronto", "Vancouver"]))
 ```
 
     MUSE classifier predicted probabilities for each city:
+         Ottawa  Toronto  Vancouver
+    0    0.9806   0.0193     0.0001
+    1    0.9182   0.0815     0.0004
+    2    0.1718   0.8188     0.0094
+    3    0.8385   0.1569     0.0046
+    4    0.3225   0.5561     0.1215
+    ..      ...      ...        ...
+    619  0.1121   0.0023     0.8856
+    620  0.0054   0.0128     0.9818
+    621  0.0651   0.0010     0.9339
+    622  0.0006   0.0230     0.9764
+    623  0.0001   0.0289     0.9710
 
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Ottawa</th>
-      <th>Toronto</th>
-      <th>Vancouver</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0.9806</td>
-      <td>0.0193</td>
-      <td>0.0001</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>0.9182</td>
-      <td>0.0815</td>
-      <td>0.0004</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>0.1718</td>
-      <td>0.8188</td>
-      <td>0.0094</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>0.8385</td>
-      <td>0.1569</td>
-      <td>0.0046</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>0.3225</td>
-      <td>0.5561</td>
-      <td>0.1215</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>619</th>
-      <td>0.1121</td>
-      <td>0.0023</td>
-      <td>0.8856</td>
-    </tr>
-    <tr>
-      <th>620</th>
-      <td>0.0054</td>
-      <td>0.0128</td>
-      <td>0.9818</td>
-    </tr>
-    <tr>
-      <th>621</th>
-      <td>0.0651</td>
-      <td>0.0010</td>
-      <td>0.9339</td>
-    </tr>
-    <tr>
-      <th>622</th>
-      <td>0.0006</td>
-      <td>0.0230</td>
-      <td>0.9764</td>
-    </tr>
-    <tr>
-      <th>623</th>
-      <td>0.0001</td>
-      <td>0.0289</td>
-      <td>0.9710</td>
-    </tr>
-  </tbody>
-</table>
-<p>624 rows × 3 columns</p>
-</div>
+    [624 rows x 3 columns]
 
 ### Convolutional neural network with recurrence plots
 
@@ -893,107 +581,26 @@ loss_cnn = log_loss(y_test_img, probs_cnn)
 
 # View predicted probabilities for each city
 print("CNN classifier predicted probabilities for each city:")
-pd.DataFrame(probs_cnn, columns = ["Ottawa", "Toronto", "Vancouver"])
+print(pd.DataFrame(probs_cnn, columns = ["Ottawa", "Toronto", "Vancouver"]))
 ```
 
     Predicting: 0it [00:00, ?it/s]
 
     CNN classifier predicted probabilities for each city:
+         Ottawa  Toronto  Vancouver
+    0    0.4494   0.5506     0.0001
+    1    0.5916   0.4082     0.0002
+    2    0.5497   0.4487     0.0016
+    3    0.6482   0.3122     0.0396
+    4    0.3470   0.5338     0.1192
+    ..      ...      ...        ...
+    619  0.0125   0.0239     0.9636
+    620  0.0007   0.0005     0.9989
+    621  0.0129   0.0085     0.9786
+    622  0.0013   0.0007     0.9980
+    623  0.0002   0.0002     0.9997
 
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Ottawa</th>
-      <th>Toronto</th>
-      <th>Vancouver</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0.4494</td>
-      <td>0.5506</td>
-      <td>0.0001</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>0.5916</td>
-      <td>0.4082</td>
-      <td>0.0002</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>0.5497</td>
-      <td>0.4487</td>
-      <td>0.0016</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>0.6482</td>
-      <td>0.3122</td>
-      <td>0.0396</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>0.3470</td>
-      <td>0.5338</td>
-      <td>0.1192</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>619</th>
-      <td>0.0125</td>
-      <td>0.0239</td>
-      <td>0.9636</td>
-    </tr>
-    <tr>
-      <th>620</th>
-      <td>0.0007</td>
-      <td>0.0005</td>
-      <td>0.9989</td>
-    </tr>
-    <tr>
-      <th>621</th>
-      <td>0.0129</td>
-      <td>0.0085</td>
-      <td>0.9786</td>
-    </tr>
-    <tr>
-      <th>622</th>
-      <td>0.0013</td>
-      <td>0.0007</td>
-      <td>0.9980</td>
-    </tr>
-    <tr>
-      <th>623</th>
-      <td>0.0002</td>
-      <td>0.0002</td>
-      <td>0.9997</td>
-    </tr>
-  </tbody>
-</table>
-<p>624 rows × 3 columns</p>
-</div>
+    [624 rows x 3 columns]
 
 ## Performance comparison
 
@@ -1011,76 +618,26 @@ loss_random = log_loss(y_test, probs_random)
 
 # Gather performance metrics as dictionary
 dict_metrics = {
-  "Accuracy": [
-    round(x, 4) for x in [
-      p, acc_knn, acc_rocket, acc_arsenal, acc_muse, acc_cnn]],
-  "Log loss": [
-    round(x, 4) for x in [
+  "Accuracy": [round(x, 4) for x in [
+    p, acc_knn, acc_rocket, acc_arsenal, acc_muse, acc_cnn]],
+  "Log loss": [round(x, 4) for x in [
       loss_random, loss_knn, loss_rocket, loss_arsenal, loss_muse, loss_cnn]]   
 }
 
 # Print as table
-pd.DataFrame(dict_metrics, index = [
-  "Random choice", "kNN with DTW", "ROCKET", "Arsenal", "MUSE", "CNN"])
+print(pd.DataFrame(dict_metrics, index = [
+  "Random choice", "kNN with DTW", "ROCKET", "Arsenal", "MUSE", "CNN"]))
 ```
 
 </details>
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Accuracy</th>
-      <th>Log loss</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>Random choice</th>
-      <td>0.3300</td>
-      <td>1.0986</td>
-    </tr>
-    <tr>
-      <th>kNN with DTW</th>
-      <td>0.6603</td>
-      <td>5.5750</td>
-    </tr>
-    <tr>
-      <th>ROCKET</th>
-      <td>0.5401</td>
-      <td>16.5778</td>
-    </tr>
-    <tr>
-      <th>Arsenal</th>
-      <td>0.5577</td>
-      <td>2.3086</td>
-    </tr>
-    <tr>
-      <th>MUSE</th>
-      <td>0.6074</td>
-      <td>1.1958</td>
-    </tr>
-    <tr>
-      <th>CNN</th>
-      <td>0.6522</td>
-      <td>0.6695</td>
-    </tr>
-  </tbody>
-</table>
-</div>
+                   Accuracy  Log loss
+    Random choice    0.3300    1.0986
+    kNN with DTW     0.6603    5.5750
+    ROCKET           0.5401   16.5778
+    Arsenal          0.7420    0.6900
+    MUSE             0.6074    1.1958
+    CNN              0.6522    0.6695
 
 ### Confusion matrix plots
 

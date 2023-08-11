@@ -99,7 +99,7 @@ class CNN(L.LightningModule):
     self.loss = torch.nn.CrossEntropyLoss()
     
     # Softmax activation for probability predictions
-    self.softmax = torch.nn.Softmax(dim = 3)
+    self.softmax = torch.nn.Softmax(dim = 1)
     
     # Initialize weights to conform with self-normalizing SELU activation
     for layer in self.network:

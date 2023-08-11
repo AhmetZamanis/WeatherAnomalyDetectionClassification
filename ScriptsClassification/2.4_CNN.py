@@ -13,6 +13,7 @@ import optuna
 from sklearn.preprocessing import OneHotEncoder
 from X_LightningClassesClassif import TrainDataset, TestDataset, CNN, OptunaPruning
 from X_HelperFunctionsClassif import validate_cnn
+from sklearn.metrics import accuracy_score, log_loss
 
 
 # Set Torch settings
@@ -93,7 +94,7 @@ best_trial_cnn = pd.read_csv("./OutputData/trials_cnn1.csv").iloc[0,]
 
 # Retrieve best hyperparameters
 hyperparams_dict = {
-    "input_channels": x_tr.shape[1],
+    "input_channels": x_train.shape[1],
     "learning_rate": best_trial_cnn["params_learning_rate"],
     "lr_decay": best_trial_cnn["params_lr_decay"]
   }
@@ -117,6 +118,7 @@ trainer = L.Trainer(
   accelerator = "gpu", devices = "auto", precision = "16-mixed",
   enable_model_summary = True,
   logger = True,
+  log_every_n_steps = 20,
   enable_progress_bar = True,
   enable_checkpointing = True
 )

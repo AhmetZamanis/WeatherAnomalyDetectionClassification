@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import arff
 
-from X_HelperFunctionsClassif import plot_confusion, scale_dims
-from sklearn.metrics import accuracy_score, log_loss
+from X_HelperFunctionsClassif import plot_confusion, scale_dims, test_model
 # from sklearn.model_selection import train_test_split
 
 
@@ -112,7 +111,7 @@ x = df.groupby(["LOCATION", "ROWGROUP"], as_index = False).apply(lambda g: np.ar
 )
 
 # 3Darray
-x = np.array([x[i] for i in range(0, len(x))])
+x = np.array([x[i] for i in range(0, len(x))], dtype = np.float32)
 
 
 # Split train & test (most recent 20% sequences for all cities as test)

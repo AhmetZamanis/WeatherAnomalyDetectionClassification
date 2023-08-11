@@ -43,13 +43,13 @@ from pyts.image import RecurrencePlot
 from sklearn.preprocessing import OneHotEncoder
 
 # Performance metrics
-from sklearn.metrics import accuracy_score, log_loss
+from sklearn.metrics import accuracy_score, log_loss, confusion_matrix
 
 # Custom Lightning classes
 from X_LightningClassesClassif import TrainDataset, TestDataset, CNN, OptunaPruning
 
 # Helper functions
-from X_HelperFunctionsClassif import plot_confusion, scale_dims, get_images, plot_images, validate_cnn
+from X_HelperFunctionsClassif import plot_confusion, scale_dims, get_images, plot_images, validate_cnn, test_model
 
 ```
 
@@ -189,7 +189,7 @@ x = df.groupby(["LOCATION", "ROWGROUP"], as_index = False).apply(
 )
 
 # Get a single 3Darray
-x = np.array([x[i] for i in range(0, len(x))])
+x = np.array([x[i] for i in range(0, len(x))], dtype = np.float64)
 
 # Print data shape
 print("Shape of data (n_sequences, n_dimensions, seq_length): " + str(x.shape))
@@ -227,29 +227,7 @@ print(
   
 ```
 
-### Recurrence plots
-
-```{python TrainValSplit}
-#| code-fold: true
-#| code-summary: "Show code to split training & validation data for each city"
-
-l_train = len(y_train) # Length of training data, for all 3 cities
-len_val = int(l_train / 3 * 0.2) # Length of val. data for one city
-len_tr = int(l_train / 3 - len_val) # Length of train data for one city
-j_train = int(l_train / 3) # Length of training data for one city
-
-# Get indices for training set, for each city
-idx_tr = list(range(0, len_tr)) + list(range(j_train, len_tr + j_train)) + list(range(j_train * 2, len_tr + (j_train * 2)))
-
-# Get indices for validation set as the difference from the training set 
-idx_val = list(range(0, l_train))
-idx_val = list(set(idx_val).difference(idx_tr))
-
-# Perform train-validation split
-y_tr, y_val = y_train[idx_tr], y_train[idx_val]
-x_tr, x_val = x_train[idx_tr], x_train[idx_val]
-
-```
+### Recurrence plot transformations
 
 Move recurrence plot code comments to text, refer to helper functions script
 
@@ -260,7 +238,6 @@ trafo_image = RecurrencePlot()
 
 # Transform the features
 x_train_img, x_test_img = get_images(x_train, x_test, trafo_image)
-x_tr, x_val = get_images(x_tr, x_val, trafo_image)
 
 # The output for 1 sequence is of shape (n_dims, seq_length, seq_length). Each
 # channel is the values of the recurrence plot for one dimension. We have 8 images
@@ -275,8 +252,8 @@ print("Shape of one image-transformed sequence: " + str(x_train_img[0].shape))
 # dimensions. The plot for each sequence is the pairwise similarity matrix of each 
 # trajectory in that sequence. The resulting "images" should identify the city 
 # when compared with other "images" for the same city.
-plot_images(x_train_img, 0, "MeanTemp", 0, 1, j_train)
-plot_images(x_train_img, 1, "TotalPrecip", 0, 1, j_train)
+plot_images(x_train_img, 0, "MeanTemp", 0, 1, len_train)
+plot_images(x_train_img, 1, "TotalPrecip", 0, 1, len_train)
 
 ```
 
@@ -284,8 +261,8 @@ plot_images(x_train_img, 1, "TotalPrecip", 0, 1, j_train)
 
 # The plots for the time dimensions in a period are the same for all cities, as
 # expected.
-plot_images(x_train_img, 2, "MonthSin", 0, 1, j_train)
-plot_images(x_train_img, 3, "MonthCos", 0, 1, j_train)
+plot_images(x_train_img, 2, "MonthSin", 0, 1, len_train)
+plot_images(x_train_img, 3, "MonthCos", 0, 1, len_train)
 
 ```
 
@@ -293,14 +270,244 @@ plot_images(x_train_img, 3, "MonthCos", 0, 1, j_train)
 
 ### K-nearest neighbors with DTW distance
 
+```{python CreateKNN}
+
+# Create KNN classifier
+model_knn = KNeighborsTimeSeriesClassifier(n_neighbors = 3, n_jobs = -1)
+
+```
+
+```{python TestKNN}
+
+# Test KNN classifier
+preds_knn, probs_knn, acc_knn, loss_knn = test_model(
+  model_knn, x_train, x_test, y_train, y_test, scale = True)
+  
+# View predicted probabilities for each city
+print("KNN classifier predicted probabilities for each city:")
+pd.DataFrame(probs_knn, columns = ["Ottawa", "Toronto", "Vancouver"])
+
+```
+
 ### ROCKET & Arsenal
 
-### WEASELMUSE
+Move code comments to text
+
+```{python CreateRocket}
+
+# Create RocketClassifier
+model_rocket = RocketClassifier(
+  use_multivariate = "yes", n_jobs = -1, random_state = 1923)
+  
+# Create Arsenal classifier (probabilistic ROCKET ensemble, memory intensive)
+model_arsenal = Arsenal(random_state = 1923)
+
+```
+
+```{python TestRocket}
+
+# Test RocketClassifier
+preds_rocket, probs_rocket, acc_rocket, loss_rocket = test_model(
+  model_rocket, x_train, x_test, y_train, y_test, scale = False)
+
+# View predicted probabilities for each city (ROCKET is non-probabilistic)
+print("ROCKET classifier predicted probabilities for each city:")
+pd.DataFrame(probs_rocket, columns = ["Ottawa", "Toronto", "Vancouver"])
+
+```
+
+```{python TestArsenal}
+
+# Test Arsenal classifier
+preds_arsenal, probs_arsenal, acc_arsenal, loss_arsenal = test_model(
+  model_arsenal, x_train, x_test, y_train, y_test, scale = False)
+
+# View predicted probabilities for each city
+print("Arsenal classifier predicted probabilities for each city:")
+pd.DataFrame(probs_arsenal, columns = ["Ottawa", "Toronto", "Vancouver"])
+
+```
+
+### MUSE
+
+```{python CreateMUSE}
+
+# Create MUSE classifier
+model_muse = MUSE(
+  use_first_order_differences = False, # Not meaningful for time features
+  support_probabilities = True, # Train LogisticRegression which outputs probs.
+  n_jobs = -1, random_state = 1923)
+
+```
+
+```{python TestMUSE}
+
+# Test classifier
+preds_muse, probs_muse, acc_muse, loss_muse = test_model(
+  model_muse, x_train, x_test, y_train, y_test, scale = True)
+  
+# View predicted probabilities for each city
+print("MUSE classifier predicted probabilities for each city:")
+pd.DataFrame(probs_muse, columns = ["Ottawa", "Toronto", "Vancouver"])
+
+```
 
 ### Convolutional neural network with recurrence plots
 
-#### Hyperparameter tuning
+Refer to classes script for Ligtning code, CNN script for Optuna tuning code
 
-#### Final model
+#### Data prep
+
+```{python CNNDataPrep}
+#| code-fold: true
+#| code-summary: "Show code to prepare data for CNN training"
+
+
+# Convert multiclass targets into binary matrices of shape (n_seq, n_classes)
+encoder_onehot = OneHotEncoder(sparse_output = False)
+y_train_img = encoder_onehot.fit_transform(y_train.reshape(-1, 1))
+y_test_img = encoder_onehot.fit_transform(y_test.reshape(-1, 1))
+
+
+# Load data into TrainDataset
+train_data = TrainDataset(x_train_img, y_train_img)
+test_data = TestDataset(x_test_img)
+
+# Create dataloaders
+train_loader = torch.utils.data.DataLoader(
+  train_data, batch_size = 128, num_workers = 0, shuffle = True)
+test_loader = torch.utils.data.DataLoader(
+  test_data, batch_size = len(test_data), num_workers = 0, shuffle = False)
+
+
+# Import best trial
+best_trial_cnn = pd.read_csv("./OutputData/trials_cnn1.csv").iloc[0,]
+
+# Retrieve best hyperparameters
+hyperparams_dict = {
+    "input_channels": x_train.shape[1],
+    "learning_rate": best_trial_cnn["params_learning_rate"],
+    "lr_decay": best_trial_cnn["params_lr_decay"]
+  }
+
+```
+
+#### Model testing
+
+```{python TrainCNN}
+
+# Create trainer
+trainer = L.Trainer(
+  max_epochs = int(best_trial_cnn["user_attrs_n_epochs"]),
+  accelerator = "gpu", devices = "auto", precision = "16-mixed",
+  enable_model_summary = True,
+  logger = True,
+  log_every_n_steps = 20,
+  enable_progress_bar = True,
+  enable_checkpointing = True
+)
+
+# Create & train model
+model = CNN(hyperparams_dict)
+trainer.fit(model, train_loader)
+
+```
+
+```{python PredCNN}
+
+# Predict testing data
+probs_cnn = trainer.predict(model, test_loader)
+probs_cnn = probs_cnn[0].cpu().numpy().astype(np.float32)
+
+# Convert to class predictions
+preds_cnn = classes[np.argmax(probs_cnn, axis = 1)]
+
+# Calculate performance metrics
+acc_cnn = accuracy_score(classes[np.argmax(y_test_img, axis = 1)], preds_cnn) 
+loss_cnn = log_loss(y_test_img, probs_cnn) 
+
+# View predicted probabilities for each city
+print("CNN classifier predicted probabilities for each city:")
+pd.DataFrame(probs_cnn, columns = ["Ottawa", "Toronto", "Vancouver"])
+
+```
+
+## Performance comparison
+
+### Metrics table
+
+```{python MetricsTable}
+#| code-fold: true
+#| code-summary: "Show code to create performance metrics table"
+
+# Generate random chance performance metrics
+p = 0.33
+probs_random = np.repeat(np.repeat(p, 3), len(y_test))
+probs_random = np.reshape(probs_random, (len(y_test), 3))
+loss_random = log_loss(y_test, probs_random) 
+
+# Gather performance metrics as dictionary
+dict_metrics = {
+  "Accuracy": [
+    round(x, 4) for x in [
+      p, acc_knn, acc_rocket, acc_arsenal, acc_muse, acc_cnn]],
+  "Log loss": [
+    round(x, 4) for x in [
+      loss_random, loss_knn, loss_rocket, loss_arsenal, loss_muse, loss_cnn]]   
+}
+
+# Print as table
+pd.DataFrame(dict_metrics, index = [
+  "Random choice", "kNN with DTW", "ROCKET", "Arsenal", "MUSE", "CNN"])
+
+```
+
+### Confusion matrix plots
+
+```{python ConfusionMatrix}
+#| code-fold: true
+#| code-summary: "Show code to create confusion matrix plots"
+
+# Gather class predictions as dictionary
+dict_preds = {
+  "kNN with DTW": preds_knn,
+  # "ROCKET + ridge": preds_rocket,
+  "Arsenal + ridge": preds_arsenal,
+  "MUSE + logistic": preds_muse,
+  "CNN with recurrence plots": preds_cnn
+}
+
+# Gather axes as dictionary
+dict_axes = {
+  "kNN with DTW": (0, 0),
+  "Arsenal + ridge": (0, 1),
+  "MUSE + logistic": (1, 0),
+  "CNN with recurrence plots": (1, 1)
+}
+
+# Create figure
+fig, ax = plt.subplots(2,2, sharey = True, sharex = True)
+_ = fig.suptitle("Confusion matrices of time series classifiers")
+
+# Generate plots
+for key in dict_preds.keys():
+  
+  # Get confusion matrix
+  matrix = confusion_matrix(y_test, dict_preds[key], labels = classes)
+  
+  # Create plot
+  idx = dict_axes[key]
+  _ = sns.heatmap(
+      matrix, xticklabels = classes, yticklabels = classes, cmap = "Reds", 
+      annot = True, fmt = "g", square = True, cbar = False, linecolor = "black", 
+      linewidths = 0.5, ax = ax[idx])
+  _ = ax[idx].set_xlabel("Predicted classes")
+  _ = ax[idx].set_ylabel("True classes")
+  _ = ax[idx].set_title(key)
+
+plt.show()
+plt.close("all")
+
+```
 
 ## Conclusion

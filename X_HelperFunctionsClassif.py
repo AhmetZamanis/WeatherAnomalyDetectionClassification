@@ -7,6 +7,7 @@ import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping
 from X_LightningClassesClassif import CNN, OptunaPruning
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, log_loss
 
 
 def plot_confusion(y_true, y_pred, labels, title_str):
@@ -16,15 +17,15 @@ def plot_confusion(y_true, y_pred, labels, title_str):
   """
   matrix = confusion_matrix(y_true, y_pred, labels = labels)
   _ = sns.heatmap(
-    matrix, xticklabels = labels, yticklabels = labels, cmap = "Reds", 
-    annot = True, fmt = "g", square = True, cbar = False, linecolor = "black", 
-    linewidths = 0.5)
+      matrix, xticklabels = labels, yticklabels = labels, cmap = "Reds", 
+      annot = True, fmt = "g", square = True, cbar = False, linecolor = "black", 
+      linewidths = 0.5)
   _ = plt.xlabel("Predicted classes")
   _ = plt.ylabel("True classes")
   _ = plt.title("Confusion matrix, " + title_str)
   plt.show()
   plt.close("all")
-
+    
 
 def get_images(x_train, x_test, trafo):
   """
@@ -208,3 +209,31 @@ def validate_cnn(hyperparams_dict, train_loader, val_loader, trial, tol = 1e-4):
   
   # Return score & epoch
   return score, epoch
+
+
+def test_model(model, x_train, x_test, y_train, y_test, scale = False):
+  """
+  Takes in a sktime classifier, optionally performs scaling, tests model, returns
+  accuracy, log loss and test set predictions.
+  """
+  
+  # Scale the features
+  x_train, x_test = scale_dims(x_train, x_test)
+
+  # Fit on training data
+  _ = model.fit(x_train, y_train)
+
+  # Predict testing data
+  preds = model.predict(x_test)
+  probs = model.predict_proba(x_test)
+  
+  # Get class labels
+  classes = np.unique(y_train)
+
+  # Calculate accuracy
+  acc = accuracy_score(y_test, preds)
+
+  # Calculate log loss
+  loss = log_loss(y_test, probs, labels = classes)
+  
+  return preds, probs, acc, loss

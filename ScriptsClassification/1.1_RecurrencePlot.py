@@ -24,6 +24,7 @@ idx_tr = list(range(0, len_tr)) + list(range(j, len_tr + j)) + list(range(j * 2,
 idx_val = list(range(0, l))
 idx_val = list(set(idx_val).difference(idx_tr))
 
+
 # Perform split
 y_tr, y_val = y_train[idx_tr], y_train[idx_val]
 x_tr, x_val = x_train[idx_tr], x_train[idx_val]

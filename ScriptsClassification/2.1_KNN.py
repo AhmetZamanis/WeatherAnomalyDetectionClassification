@@ -8,32 +8,18 @@ exec(open("./ScriptsClassification/1_DataPrep.py").read())
 from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
 
 
-# Scale the features
-x_train, x_test = scale_dims(x_train, x_test)
-
-
 # Create KNN classifier
 model_knn = KNeighborsTimeSeriesClassifier(n_neighbors = 3, n_jobs = -1)
 
 
-# Fit on training data
-_ = model_knn.fit(x_train, y_train)
+# Test classifier
+preds_knn, probs_knn, acc_knn, loss_knn = test_model(
+  model_knn, x_train, x_test, y_train, y_test, scale = True)
 
 
-# Predict testing data
-preds_knn = model_knn.predict(x_test)
-probs_knn = model_knn.predict_proba(x_test)
-
-
-# Calculate multiclass performance metrics
-
-# Accuracy
-accuracy_score(y_test, preds_knn)
-# 0.6602564102564102
-
-# Log loss
-log_loss(y_test, probs_knn, labels = classes)
-# 5.575000713123325
+# View metrics
+acc_knn # 0.6602564102564102
+loss_knn # 5.575000713123325
 
 
 # Plot confusion matrix

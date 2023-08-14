@@ -382,8 +382,8 @@ The pyts package offers several
 [methods](https://pyts.readthedocs.io/en/stable/modules/image.html) to
 convert time series into images, which can then be classified with image
 classification models. We’ll convert our sequences into recurrence
-plots: Black-and-white images that represent the distances between each
-time step in the sequence (called trajectories).
+plots: Black-and-white images that represent the pairwise distances
+between each time step in the sequence (called trajectories).
 
 - For each sequence, we’ll end up with a 28 x 28 matrix of distances for
   each of the 8 variables.
@@ -532,7 +532,7 @@ ROCKET is a fast and efficient transformation used to derive features
 for time series classification. It relies on convolutional kernels, not
 unlike the convolutional neural network approach we’ll use later. [See
 here](https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html)
-for a good explanation of convolution, which is best done visually.
+for a good explanation of convolution, which is best made visually.
 
 - Instead of learning the weights for the convolutional kernels during
   training (as we will do with a CNN), ROCKET simply generates a large
@@ -555,9 +555,9 @@ for a good explanation of convolution, which is best done visually.
     is between an input matrix of size N x D, and a kernel matrix of L x
     D.
 
-- In effect, we convert our 3D data of shape (n_observations,
-  n_features, series_length) into 2D data of shape (n_observations,
-  n_kernels \* 2).
+- In effect, we convert our 3D data of shape
+  `(n_sequences, n_features, seq_length)` into 2D data of shape
+  `(n_sequences, n_kernels * 2)`.
 
 - sktime’s `RocketClassifier` combines a ROCKET transformation with
   sklearn’s `RidgeClassifierCV`: L2-regularized logistic regression with
@@ -566,8 +566,8 @@ for a good explanation of convolution, which is best done visually.
 
 We’ll also try `Arsenal`, which is simply an ensemble of ROCKET +
 RidgeClassifierCV classifiers, by default 25 of them. The ensemble
-weighs each classifier according to its built-in crossvalidation
-accuracy.
+weighs the predictions of each classifier according to their built-in
+crossvalidation accuracies.
 
 Besides the default ROCKET transformation described above, there are two
 more variations of the ROCKET transform, MiniRocket and MultiRocket.
@@ -591,7 +591,8 @@ more variations of the ROCKET transform, MiniRocket and MultiRocket.
   shape.
 
   - MultiRocket is not to be confused with a multivariate version of the
-    default ROCKET. All three variants have multivariate versions.
+    default ROCKET. Both variants have univariate and multivariate
+    versions.
 
 ``` python
 # Create RocketClassifier
@@ -675,9 +676,9 @@ The next method we’ll use is a bag-of-words approach.
   using the derived words as features in regular classifiers.
 
 The **WEASEL** method extracts words from a time series with multiple
-sliding windows of varying sizes, and selects the most discriminative
-ones, with the chi-squared test by default. **MUSE** extends this
-approach to multivariate time series.
+sliding windows of varying sizes, and selects the most predictive ones,
+with the chi-squared test by default. **MUSE** extends this approach to
+multivariate time series.
 
 The sktime implementation of `MUSE` combines the WEASEL + MUSE
 transformation with a logistic regression classifier, trained on the
@@ -723,7 +724,7 @@ print(pd.DataFrame(probs_muse, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
     [624 rows x 3 columns]
 
-The probability predictions of the MUSE classifier are more
+The probability predictions of the MUSE classifier are likely more
 sophisticated than the previous methods.
 
 ### Convolutional neural network with recurrence plots
@@ -744,12 +745,15 @@ convolutional layer are optimized as parameters during model training,
 just like weights and bias terms in a dense layer.
 
 The main idea in CNNs is to take in a high-dimensional input, and to
-reduce its dimensionality with multiple convolutional layers, all the
-while capturing non-linear relationships & interaction effects.
+reduce its dimensionality with multiple convolutional layers, while also
+increasing the number of channels. This basically trades image
+resolution in favor of more features, allowing us to capture non-linear
+relationships & interaction effects from the data in a computationally
+efficient manner.
 
 - The convolution operations “summarize” the values of neighboring
   points in a matrix, which may be a matrix of pixels of an image. In
-  our case, it is a matrix of distances between each time step in the
+  our case, it is a matrix of pairwise distances for time steps in a
   sequence.
 
 - The performance of CNNs depend on several assumptions about the nature
@@ -758,21 +762,24 @@ while capturing non-linear relationships & interaction effects.
   our problem by “locally summarizing” neighboring values, and looking
   for relationships & interactions between these “local summaries”.
 
-Our inputs (one sequence) are of shape (8, 28, 28): Images of size 28 x
-28, with 8 channels (features). Our network starts with three successive
-convolutional + maximum pooling layers. Each layer will roughly reduce
-the input size into half, while roughly doubling the channel size.
+Our network inputs (one sequence, ignoring training batch size) are of
+shape `(8, 28, 28)`: Images of size 28 x 28, with 8 channels (features).
+Our network starts with three successive blocks of convolutional +
+maximum pooling layers. Each block will roughly reduce the input size
+into half, while roughly doubling the channel size.
 
-- Pooling simply applies a window to the input and pools the values in
-  the window according to a function, usually the maximum. This can help
-  the network generalize better.
+- Pooling simply applies a window to its input (the output of
+  convolution), and pools the values in the window according to a
+  function, usually the maximum. This can help the network generalize
+  better.
 
-- The fourth convolutional + maximum pooling layer will reduce the
-  channel size to 3, the number of target class labels. Finally, we’ll
-  apply global average pooling & flattening to arrive at a vector of
-  length 3 as our final output: The predicted logits of belonging to
-  each target class. To convert these into probability predictions, we
-  can simply apply a softmax activation function.
+- The fourth convolutional + pooling block will reduce the channel size
+  to 3, the number of target class labels in our classification problem.
+
+- Finally, we’ll apply global average pooling & flattening to arrive at
+  a vector of length 3 as our final output: The predicted logits of
+  belonging to each target class. To convert these into probability
+  predictions, we can simply apply a softmax activation function.
 
   - Older CNN architectures feed the outputs of convolutional layers
     into dense layers to arrive at the final predictions. More recent
@@ -900,10 +907,10 @@ We’ll also assess the quality of probability predictions with log loss.
 ### Metrics table
 
 We’ll compare the performance metrics of our classifiers with random
-chance predictions. With 3 perfectly balanced target classes, random
-chance would yield an accuracy of roughly 33%. We’ll also compute log
-loss for random chance, assuming each class is assigned a probability of
-0.33.
+chance predictions as a baseline. With 3 perfectly balanced target
+classes, random chance would yield an accuracy of roughly 33%. We’ll
+also compute log loss for random chance, assuming each class is assigned
+a probability of 0.33 for all sequences.
 
 <details>
 <summary>Show code to create performance metrics table</summary>
@@ -1025,7 +1032,7 @@ for each class.
   Vancouver, but generally struggle telling apart Ottawa and Toronto.
   This is expected as Vancouver is on the west coast, with a
   considerably different climate, while Ottawa and Toronto are close to
-  one another in the east coast.
+  one another on the east coast.
 
 - kNN often confuses Ottawa & Toronto for Vancouver, in addition to one
   another. Other models mostly confuse Ottawa & Toronto for one another,
@@ -1036,8 +1043,8 @@ for each class.
 
 ## Conclusion
 
-We compared several different approaches to time series classification,
-and the results are subjective.
+We compared several different approaches to multivariate time series
+classification, and the results are subjective.
 
 - While the Arsenal ensemble of MultiRocket + Ridge classifiers clearly
   performed better in class predictions, the CNN model trained on
@@ -1049,9 +1056,9 @@ and the results are subjective.
   class prediction, so we can assess the uncertainty ourselves.
 
 - Still, the Arsenal ensemble also achieved a comparable log loss score,
-  which is very impressive for a fairly simplistic method. Also keep in
-  mind that we can combine a ROCKET transformation with any classifier
-  in theory, instead of just logistic regression.
+  which is very impressive for a fairly simple method. Also keep in mind
+  that we can combine a ROCKET transformation with any classifier in
+  theory, instead of just logistic regression.
 
 - Personally, I believe in finding the simplest tool that solves a
   problem. In future time series classification problems, ROCKET

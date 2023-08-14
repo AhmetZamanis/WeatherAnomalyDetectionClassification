@@ -28,7 +28,30 @@ Ahmet Zamanis
 
 ## Introduction
 
-Refer to data source, code repository
+In time series classification, the goal is to predict the class label
+attributed to an entire time series rather than a single observation. A
+common example is classifying ECG readings as normal and abnormal, or
+predicting whether a machine is faulty from a sequence of sensor
+readings.
+
+In this report, we’ll take multivariate sequences of weather
+measurements from several locations, and try to predict which location
+these sequences were observed in. We’ll test and compare several time
+series classifiers from the [sktime](https://github.com/sktime/sktime)
+package. We’ll also try the method of transforming our time series into
+images (with the [pyts](https://github.com/johannfaouzi/pyts) package)
+and classifying the images with a convolutional neural network built in
+PyTorch Lightning.
+
+The data consists of daily mean temperature and total precipitation
+measurements across 13 Canadian locations, some ranging from 1940 to
+2020, others starting from 1960. The data was downloaded from
+[OpenML](https://openml.org/search?type=data&status=active&id=43843&sort=runs),
+shared by user Elif Ceren Gök.
+
+The Python scripts for this analysis are available on the [GitHub
+repository](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification).
+They may not be fully up to date with the report.
 
 <details>
 <summary>Show imports</summary>
@@ -79,8 +102,8 @@ pd.options.display.float_format = '{:.4f}'.format
 pd.set_option('display.max_columns', None)
 
 # Set plotting options
-plt.rcParams['figure.dpi'] = 300
-plt.rcParams['savefig.dpi'] = 300
+plt.rcParams['figure.dpi'] = 200
+plt.rcParams['savefig.dpi'] = 200
 plt.rcParams["figure.autolayout"] = True
 sns.set_style("darkgrid")
 
@@ -94,6 +117,11 @@ warnings.filterwarnings("ignore", ".*does not have many workers.*")
 </details>
 
 ## Data preparation
+
+The data is in .arff format, and we’ll use the
+[liac-arff](https://github.com/renatopp/liac-arff) package to read it.
+We have daily mean temperature and total precipitation values for each
+of the 13 locations.
 
 ``` python
 # Load raw data
@@ -167,7 +195,9 @@ pd.isnull(df).sum()
     TOTAL_PRECIPITATION_WINNIPEG       247
     dtype: int64
 
-Pre-1960 locations: Calgary, Vancouver, Ottawa, Toronto
+We’ll focus our attention on three of the pre-1960 locations: Ottawa,
+Toronto and Vancouver. First we’ll long convert the data, and retrieve
+the rows only for these three cities.
 
 ``` python
 # Wide to long conversion
@@ -203,12 +233,28 @@ print(df)
 
     [87663 rows x 3 columns]
 
+We have a few missing weather measurements across the time period. We’ll
+interpolate them with a simple method.
+
 ``` python
 # Interpolate missing values in Ottawa, Toronto, Vancouver
 df = df.groupby("LOCATION", group_keys = False).apply(
   lambda g: g.interpolate(method = "time"))
 df = df.reset_index()
 ```
+
+The daily mean temperature and total precipitation values will be our
+weather variables. To predict the city of a sequence of weather
+measurements, we’ll need to compare these variables with the dates they
+were observed in.
+
+- To this end, we’ll extract month, week of year and day of year
+  features from our date column.
+
+- We’ll use cyclical encoding to transform these categorical variables
+  into numeric, while reflecting their cyclical nature to the algorithms
+  we’ll use. This creates a pair of sine and cosine values for each time
+  variable, resulting in a total of 8 variables per location.
 
 ``` python
 # Add cyclic terms for month, week of year and day of year
@@ -219,6 +265,10 @@ df["week_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.isocalendar().week / 53)
 df["day_sin"] = np.sin(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 df["day_cos"] = np.cos(2 * np.pi * df["LOCAL_DATE"].dt.dayofyear / 366)
 ```
+
+We’ll split the data for each city into 28-day sequences. We’ll store
+the data in a 3D numpy array, which is accepted as input by both sktime
+and pyts.
 
 <details>
 <summary>Show code to split data into 28-day sequences</summary>
@@ -280,6 +330,17 @@ print("Shape of data (n_sequences, n_dimensions, seq_length): " + str(x.shape))
 
     Shape of data (n_sequences, n_dimensions, seq_length): (3126, 8, 28)
 
+We have 3126 multivariate sequences of 8 variables, each sequence 28
+days long. Each of the three cities have an equal number of sequences.
+Many time series classifiers don’t accept sequences of unequal lengths,
+so we dropped the remainder days which could not make up a 28-day
+sequence.
+
+Next, we’ll split the training and testing data while minding the time
+order of the sequences. The training data will consist of the first 80%
+of sequences for each city, and the testing data will consist of the
+last 20%. We’ll do this split manually, as shown in the cell below.
+
 <details>
 <summary>Show code to split training & testing data for each
 city</summary>
@@ -317,8 +378,24 @@ print(
 
 ### Recurrence plot transformations
 
-Move recurrence plot code comments to text, refer to helper functions
-script
+The pyts package offers several
+[methods](https://pyts.readthedocs.io/en/stable/modules/image.html) to
+convert time series into images, which can then be classified with image
+classification models. We’ll convert our sequences into recurrence
+plots: Black-and-white images that represent the distances between each
+time step in the sequence (called trajectories).
+
+- For each sequence, we’ll end up with a 28 x 28 matrix of distances for
+  each of the 8 variables.
+
+- Then the problem practically turns into image classification, with 8
+  images (channels) of size 28 x 28 for each sequence.
+
+After the recurrence plot transformation, we’ll also scale each channel
+between 0 to 1. We’ll do the scaling manually as the usual scaler
+functions do not accept our data dimensions. See the [helper functions
+script](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/blob/main/X_HelperFunctionsClassif.py)
+for more details.
 
 ``` python
 # Create RecurrencePlot transformer
@@ -334,7 +411,8 @@ print(
 
     Shape of one image-transformed sequence (n_dims, seq_length, seq_length): (8, 28, 28)
 
-For each sequence, we have 8 images of size 28x28.
+We can plot our transformed data as black and white images. We’ll plot
+two consecutive sequences of weather measurements for each city.
 
 ``` python
 # Plot the recurrence plot for two consecutive sequences per city, for the weather
@@ -347,9 +425,18 @@ plot_images(x_train_img, 1, "TotalPrecip", 0, 1, len_train)
 
 ![](ReportClassification_files/figure-commonmark/cell-12-output-2.png)
 
-The plot for each sequence is the pairwise similarity matrix of each
-trajectory in that sequence. The resulting “images” should identify the
-city when compared with other “images” for the same city.
+Each plot is the pairwise similarity matrix of each trajectory in that
+sequence, for that variable. The resulting images should identify the
+city when compared with other images for the same city.
+
+We can also plot the time dimensions, and confirm they are the same for
+each city.
+
+- These dimensions won’t identify the cities by themselves, they are
+  only fed into the models for interaction with the weather variables.
+
+- A particular weather measurement alone may not identify the city, but
+  the same measurement at specific times could.
 
 ``` python
 # Plot the recurrence plot for two consecutive sequences per city, for the month dimensions
@@ -361,12 +448,43 @@ plot_images(x_train_img, 3, "MonthCos", 0, 1, len_train)
 
 ![](ReportClassification_files/figure-commonmark/cell-13-output-2.png)
 
-The plots for the time dimensions in a period are the same for all
-cities, as expected.
-
 ## Time series classification
 
+We’ll try several time series classification methods, focusing on those
+that natively handle multivariate time series.
+
+- The idea behind most of these multivariate methods is to perform
+  certain transformations on the time series, or to extract certain
+  features from them. These can then be used as inputs in regular
+  classification algorithms.
+
+- The image transformation we applied is one such method. Other methods
+  take a text classification approach, transforming time series into
+  word representations and deriving features from these.
+
+- Some methods even rely on extracting simple summary statistics from
+  the time series.
+
 ### K-nearest neighbors with DTW distance
+
+The first approach we’ll use is the k-nearest neighbor classifier
+adapted to time series data. The main difference is the distance metric
+used: **Dynamic time warping** distance.
+
+- DTW is a method that calculates the optimal match between the
+  observations of two time series, even if they are of unequal length.
+  This is done by minimizing the differences between each pair subject
+  to certain conditions.
+
+- DTW is often used in tasks like speech recognition, where the analyzed
+  sequences may be of different lengths.
+
+- DTW outputs a similarity metric for two time series, which will be our
+  distance metric in the kNN classifier.
+
+The number of nearest neighbors used to classify each observation is the
+key parameter in kNN. We’ll just use 3, but the result may considerably
+change with different values.
 
 ``` python
 # Create KNN classifier
@@ -374,6 +492,10 @@ model_knn = KNeighborsTimeSeriesClassifier(
   n_neighbors = 3, # N. of nearest neighbors to compare each observation
   n_jobs = -1)
 ```
+
+We’ll train our models, test their performances and retrieve their
+predictions on the test set. We’ll aggregate and compare the performance
+metrics at the end.
 
 ``` python
 # Test KNN classifier
@@ -401,19 +523,85 @@ print(pd.DataFrame(probs_knn, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
     [624 rows x 3 columns]
 
+Since our model makes predictions with the 3 nearest neighbors, the
+probability predictions are fairly simplistic.
+
 ### ROCKET & Arsenal
 
-Move code comments to text
+ROCKET is a fast and efficient transformation used to derive features
+for time series classification. It relies on convolutional kernels, not
+unlike the convolutional neural network approach we’ll use later. [See
+here](https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html)
+for a good explanation of convolution, which is best done visually.
+
+- Instead of learning the weights for the convolutional kernels during
+  training (as we will do with a CNN), ROCKET simply generates a large
+  number of kernels randomly. In the sktime implementation, the kernels
+  are randomly assigned a length of 7, 9 or 11.
+
+- The convolutions are applied to each observation (which are univariate
+  or multivariate time series, and not single values), and two features
+  are extracted from the resulting feature maps: The maximum value and
+  the proportion of positive values. These can then be used as features
+  in classifier algorithms.
+
+  - With a univariate time series of length N, the convolution is
+    between an input vector of length N, and a kernel vector of length
+    L.
+
+  - With a multivariate time series, each kernel is assigned a random
+    selection of D features as the input channels. A set of weights are
+    randomly generated for each selected input channel. The convolution
+    is between an input matrix of size N x D, and a kernel matrix of L x
+    D.
+
+- In effect, we convert our 3D data of shape (n_observations,
+  n_features, series_length) into 2D data of shape (n_observations,
+  n_kernels \* 2).
+
+- sktime’s `RocketClassifier` combines a ROCKET transformation with
+  sklearn’s `RidgeClassifierCV`: L2-regularized logistic regression with
+  built-in crossvalidation. We’ll stick to this approach, but other
+  classifiers can also be used.
+
+We’ll also try `Arsenal`, which is simply an ensemble of ROCKET +
+RidgeClassifierCV classifiers, by default 25 of them. The ensemble
+weighs each classifier according to its built-in crossvalidation
+accuracy.
+
+Besides the default ROCKET transformation described above, there are two
+more variations of the ROCKET transform, MiniRocket and MultiRocket.
+
+- MiniRocket is a highly deterministic version of ROCKET: The kernels
+  are fixed at length 9 and kernel weights are restricted to two values.
+  The only feature derived from the feature maps is the proportion of
+  positive values.
+
+- MultiRocket applies MiniRocket to both the original and first-order
+  differenced series. It also derives three more features from the
+  feature maps: Mean of positive values, mean of indices of positive
+  values, and longest stretch of positive values.
+
+- Both MiniRocket and MultiRocket performed considerably better than the
+  default ROCKET on this problem. We’ll continue with MultiRocket in
+  this demonstration.
+
+- `RocketClassifier` automatically chooses the univariate or
+  multivariate version of either ROCKET variant based on the input data
+  shape.
+
+  - MultiRocket is not to be confused with a multivariate version of the
+    default ROCKET. All three variants have multivariate versions.
 
 ``` python
 # Create RocketClassifier
 model_rocket = RocketClassifier(
-  use_multivariate = "yes", # Use multivariate ROCKET transforms
+  rocket_transform = "multirocket", # Use MultiRocket variant
   n_jobs = -1, random_state = 1923)
   
 # Create Arsenal classifier (probabilistic ROCKET ensemble, memory intensive)
 model_arsenal = Arsenal(
-  rocket_transform = "multirocket", # Use multivariate ROCKET transforms
+  rocket_transform = "multirocket", # Use MultiRocket variant
   random_state = 1923)
 ```
 
@@ -423,21 +611,21 @@ preds_rocket, probs_rocket, acc_rocket, loss_rocket = test_model(
   model_rocket, x_train, x_test, y_train, y_test, scale = False)
 
 # View predicted probabilities for each city (ROCKET is non-probabilistic)
-print("ROCKET classifier predicted probabilities for each city:")
+print("MultiRocket classifier predicted probabilities for each city:")
 print(pd.DataFrame(probs_rocket, columns = ["Ottawa", "Toronto", "Vancouver"]))
 ```
 
-    ROCKET classifier predicted probabilities for each city:
+    MultiRocket classifier predicted probabilities for each city:
          Ottawa  Toronto  Vancouver
-    0    1.0000   0.0000     0.0000
+    0    0.0000   1.0000     0.0000
     1    0.0000   1.0000     0.0000
-    2    0.0000   0.0000     1.0000
+    2    1.0000   0.0000     0.0000
     3    1.0000   0.0000     0.0000
-    4    1.0000   0.0000     0.0000
+    4    0.0000   1.0000     0.0000
     ..      ...      ...        ...
-    619  1.0000   0.0000     0.0000
+    619  0.0000   0.0000     1.0000
     620  0.0000   0.0000     1.0000
-    621  0.0000   1.0000     0.0000
+    621  0.0000   0.0000     1.0000
     622  0.0000   0.0000     1.0000
     623  0.0000   0.0000     1.0000
 
@@ -455,21 +643,51 @@ print(pd.DataFrame(probs_arsenal, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
     Arsenal classifier predicted probabilities for each city:
          Ottawa  Toronto  Vancouver
-    0    0.7526   0.2474    -0.0000
-    1    0.7508   0.2492    -0.0000
-    2    0.8410   0.1590    -0.0000
-    3    0.7564   0.2436    -0.0000
-    4    0.6414   0.3586    -0.0000
+    0    0.7535   0.2465    -0.0000
+    1    0.8332   0.1668    -0.0000
+    2    0.8313   0.1687    -0.0000
+    3    0.7561   0.2439    -0.0000
+    4    0.5687   0.4313    -0.0000
     ..      ...      ...        ...
-    619 -0.0000   0.0429     0.9571
+    619 -0.0000  -0.0000     1.0000
     620 -0.0000  -0.0000     1.0000
-    621 -0.0000  -0.0000     1.0000
+    621  0.0430  -0.0000     0.9570
     622 -0.0000  -0.0000     1.0000
     623 -0.0000  -0.0000     1.0000
 
     [624 rows x 3 columns]
 
+A single `RocketClassifier` does not yield probabilistic predictions,
+but an `Arsenal` ensemble does.
+
 ### MUSE
+
+The next method we’ll use is a bag-of-words approach.
+
+- In general, these approaches assign “letters” to values in a time
+  series, binning similar values into the same categories.
+
+- Subsequences can be extracted from time series, and transformed into a
+  sequence of letters, i.e. “words”.
+
+- Predictions can be made based on the appearance frequencies of words,
+  borrowing from text classification concepts such as TF-IDF, or by
+  using the derived words as features in regular classifiers.
+
+The **WEASEL** method extracts words from a time series with multiple
+sliding windows of varying sizes, and selects the most discriminative
+ones, with the chi-squared test by default. **MUSE** extends this
+approach to multivariate time series.
+
+The sktime implementation of `MUSE` combines the WEASEL + MUSE
+transformation with a logistic regression classifier, trained on the
+features chosen by a one-way ANOVA test. We’ll use this method with
+pretty much the default settings.
+
+- We won’t use the first-order differences of the features, as they are
+  likely not meaningful for our time features. MiniRocket does not use
+  first-order differences while MultiRocket does, and both methods
+  perform very similarly on this problem.
 
 ``` python
 # Create MUSE classifier
@@ -505,12 +723,75 @@ print(pd.DataFrame(probs_muse, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
     [624 rows x 3 columns]
 
+The probability predictions of the MUSE classifier are more
+sophisticated than the previous methods.
+
 ### Convolutional neural network with recurrence plots
 
-Refer to classes script for Ligtning code, CNN script for Optuna tuning
-code
+Finally, we’ll perform image classification on the data we transformed
+into recurrence plots, using a typical convolutional neural network. For
+details on the code & architecture, see the [custom Lightning classes
+script](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/blob/main/X_LightningClassesClassif.py).
+Also [see
+here](https://d2l.ai/chapter_convolutional-neural-networks/index.html)
+for an excellent source on CNNs and deep learning in general. Below,
+we’ll talk briefly about the intuition behind a CNN and our
+implementation.
+
+Convolutional layers apply convolution kernels to their inputs, similar
+to ROCKET. Unlike the kernels in ROCKET though, the kernel weights in a
+convolutional layer are optimized as parameters during model training,
+just like weights and bias terms in a dense layer.
+
+The main idea in CNNs is to take in a high-dimensional input, and to
+reduce its dimensionality with multiple convolutional layers, all the
+while capturing non-linear relationships & interaction effects.
+
+- The convolution operations “summarize” the values of neighboring
+  points in a matrix, which may be a matrix of pixels of an image. In
+  our case, it is a matrix of distances between each time step in the
+  sequence.
+
+- The performance of CNNs depend on several assumptions about the nature
+  of the problem and the data (see the source above for detailed
+  explanations). The way I understand it, we’re assuming we can solve
+  our problem by “locally summarizing” neighboring values, and looking
+  for relationships & interactions between these “local summaries”.
+
+Our inputs (one sequence) are of shape (8, 28, 28): Images of size 28 x
+28, with 8 channels (features). Our network starts with three successive
+convolutional + maximum pooling layers. Each layer will roughly reduce
+the input size into half, while roughly doubling the channel size.
+
+- Pooling simply applies a window to the input and pools the values in
+  the window according to a function, usually the maximum. This can help
+  the network generalize better.
+
+- The fourth convolutional + maximum pooling layer will reduce the
+  channel size to 3, the number of target class labels. Finally, we’ll
+  apply global average pooling & flattening to arrive at a vector of
+  length 3 as our final output: The predicted logits of belonging to
+  each target class. To convert these into probability predictions, we
+  can simply apply a softmax activation function.
+
+  - Older CNN architectures feed the outputs of convolutional layers
+    into dense layers to arrive at the final predictions. More recent
+    architectures instead leverage global average pooling, which reduces
+    model complexity and often performs better.
+
+  - [See here](https://d2l.ai/chapter_convolutional-modern/index.html)
+    for a detailed breakdown of some modern CNN architectures, which
+    were referenced while designing the network for this problem.
 
 #### Data prep
+
+Below are the additional data preparation steps needed to train our CNN
+model with Lightning. One advantage of CNNs is relatively fewer number
+of hyperparameters to optimize. In this case, I only tuned the learning
+rate & learning rate decay with Optuna. Here we’ll load the best tune
+previously saved, [see
+here](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/blob/main/ScriptsClassification/2.4_CNN.py)
+for the code used.
 
 <details>
 <summary>Show code to prepare data for CNN training</summary>
@@ -547,6 +828,10 @@ hyperparams_dict = {
 </details>
 
 #### Model testing
+
+We’ll train our CNN, predict the testing data and retrieve both the
+probability & class predictions in the same format as the previous
+models.
 
 ``` python
 # Create trainer
@@ -602,9 +887,23 @@ print(pd.DataFrame(probs_cnn, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
     [624 rows x 3 columns]
 
+Again, one benefit of the CNN model over some previous models is
+meaningful probability predictions.
+
 ## Performance comparison
 
+Now we can compare the performances of our classifiers. Since our data
+is perfectly balanced between the three target classes, we can use
+accuracy as a simple and intuitive metric for class predictions overall.
+We’ll also assess the quality of probability predictions with log loss.
+
 ### Metrics table
+
+We’ll compare the performance metrics of our classifiers with random
+chance predictions. With 3 perfectly balanced target classes, random
+chance would yield an accuracy of roughly 33%. We’ll also compute log
+loss for random chance, assuming each class is assigned a probability of
+0.33.
 
 <details>
 <summary>Show code to create performance metrics table</summary>
@@ -626,7 +925,7 @@ dict_metrics = {
 
 # Print as table
 print(pd.DataFrame(dict_metrics, index = [
-  "Random choice", "kNN with DTW", "ROCKET", "Arsenal", "MUSE", "CNN"]))
+  "Random choice", "kNN with DTW", "MultiRocket", "Arsenal", "MUSE", "CNN"]))
 ```
 
 </details>
@@ -634,12 +933,36 @@ print(pd.DataFrame(dict_metrics, index = [
                    Accuracy  Log loss
     Random choice    0.3300    1.0986
     kNN with DTW     0.6603    5.5750
-    ROCKET           0.5401   16.5778
-    Arsenal          0.7420    0.6900
+    MultiRocket      0.6667   12.0146
+    Arsenal          0.7452    0.8516
     MUSE             0.6074    1.1958
     CNN              0.6522    0.6695
 
+We see the Arsenal method performs considerably better than the others
+in accuracy, and even a single MultiRocket + Ridge model comes second.
+
+- The CNN model is second from last in accuracy, though it comes very
+  close to kNN and MultiRocket.
+
+- MUSE takes last place in accuracy, though it’s not far from the other
+  methods, and all methods are a huge improvement over random chance.
+
+When it comes to the quality of probability predictions, we have a
+different story, as CNN has the best log loss value by far, followed by
+Arsenal.
+
+- MUSE performs slightly worse in log loss compared to the random chance
+  method.
+
+- kNN and MultiRocket do not output meaningful probability predictions.
+
 ### Confusion matrix plots
+
+We have three target classes, and neither performance metric will inform
+us about the isolated performance for one class. We’ll plot the
+confusion matrices for the class predictions of each model to visually
+assess this. We won’t plot one for MultiRocket, as Arsenal is an
+ensemble of MultiRocket + Ridge models.
 
 <details>
 <summary>Show code to create confusion matrix plots</summary>
@@ -690,4 +1013,48 @@ plt.close("all")
 
 ![](ReportClassification_files/figure-commonmark/cell-25-output-1.png)
 
+A simple way to assess the confusion matrix plots is to look at the
+diagonals, which represent cases of true classes matching predicted
+classes. This way, we can see Arsenal does the best job in class
+predictions, overall and for each class individually.
+
+Looking at horizontal rows will give us an idea of isolated performances
+for each class.
+
+- We see all models do a great job of identifying sequences from
+  Vancouver, but generally struggle telling apart Ottawa and Toronto.
+  This is expected as Vancouver is on the west coast, with a
+  considerably different climate, while Ottawa and Toronto are close to
+  one another in the east coast.
+
+- kNN often confuses Ottawa & Toronto for Vancouver, in addition to one
+  another. Other models mostly confuse Ottawa & Toronto for one another,
+  and not for Vancouver.
+
+- Arsenal has the best performance in identifying all cities. It is
+  closely followed by kNN in Vancouver and Ottawa, and CNN in Toronto.
+
 ## Conclusion
+
+We compared several different approaches to time series classification,
+and the results are subjective.
+
+- While the Arsenal ensemble of MultiRocket + Ridge classifiers clearly
+  performed better in class predictions, the CNN model trained on
+  image-transformed data performed better in probability predictions.
+
+- The latter can be more important in many cases, especially when it
+  comes to predicting inherently unstable phenomena like the weather. We
+  may prefer a more realistic probability estimate over a simplified
+  class prediction, so we can assess the uncertainty ourselves.
+
+- Still, the Arsenal ensemble also achieved a comparable log loss score,
+  which is very impressive for a fairly simplistic method. Also keep in
+  mind that we can combine a ROCKET transformation with any classifier
+  in theory, instead of just logistic regression.
+
+- Personally, I believe in finding the simplest tool that solves a
+  problem. In future time series classification problems, ROCKET
+  variations will likely be my first choices.
+
+Any comments or suggestions are welcome.

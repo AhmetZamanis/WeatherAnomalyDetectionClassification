@@ -111,7 +111,7 @@ x = df.groupby(["LOCATION", "ROWGROUP"], as_index = False).apply(lambda g: np.ar
 )
 
 # 3Darray
-x = np.array([x[i] for i in range(0, len(x))], dtype = np.float32)
+x = np.array([x[i] for i in range(0, len(x))], dtype = np.float64)
 
 
 # Split train & test (most recent 20% sequences for all cities as test)

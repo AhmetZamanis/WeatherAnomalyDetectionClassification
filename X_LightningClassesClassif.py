@@ -57,42 +57,60 @@ class CNN(L.LightningModule):
     self.learning_rate = hyperparams_dict["learning_rate"]
     self.lr_decay = hyperparams_dict["lr_decay"]
 
-    # Define architecture 
+    # Define architecture (based on NiN architecture)
     self.network = torch.nn.Sequential(
+      
+      # Input dims: (N, 8, 28, 28)
   
-      # Convolutional block 1: Conv layer + SELU activation + max pooling
+      # Convolutional block 1: Main convolution of 11x11 + two 1x1 convs to add
+      # local non-linearity + max pooling
       torch.nn.Conv2d(
-        in_channels = self.input_channels, out_channels = 16, 
-        kernel_size = 11, padding = 5), 
-      torch.nn.SELU(),
-      torch.nn.MaxPool2d(kernel_size = 3, padding = 1, stride = 2),
-      # Output: (N, 16, 14, 14)
-  
-      # ConvBlock2
+            in_channels = self.input_channels, 
+            out_channels = 16, kernel_size = 11, padding = 5), torch.nn.SELU(),
       torch.nn.Conv2d(
-        in_channels = 16, out_channels = 32, kernel_size = 7, padding = 3), 
-      torch.nn.SELU(),
-      torch.nn.MaxPool2d(kernel_size = 3, padding = 1, stride = 2),
-      # Output: (N, 32, 7, 7)
-  
-      # ConvBlock3
+        in_channels = 16, out_channels = 16, kernel_size = 1), torch.nn.SELU(),
       torch.nn.Conv2d(
-        in_channels = 32, out_channels = 64, kernel_size = 5, padding = 2),
-      torch.nn.SELU(),
-      torch.nn.MaxPool2d(kernel_size = 3, padding = 1, stride = 2),
-      # Output: (N, 64, 4, 4)
-  
-      # ConvBlock4
+        in_channels = 16, out_channels = 16, kernel_size = 1), torch.nn.SELU(),
+      torch.nn.MaxPool2d(kernel_size = 3, stride = 2),
+      # Output dims: (N, 16, 13, 13)
+          
+      # Conv2: 7x7
       torch.nn.Conv2d(
-        in_channels = 64, out_channels = 3, kernel_size = 3, padding = 1),
-      torch.nn.SELU(),
-      torch.nn.MaxPool2d(kernel_size = 3, padding = 1, stride = 2),
-      # Output: (N, 3, 2, 2)
-  
-      # Global avg pooling + flatten
+        in_channels = 16, 
+        out_channels = 32, kernel_size = 7, padding = 3), torch.nn.SELU(),
+      torch.nn.Conv2d(
+        in_channels = 32, out_channels = 32, kernel_size = 1), torch.nn.SELU(),
+      torch.nn.Conv2d(
+        in_channels = 32, out_channels = 32, kernel_size = 1), torch.nn.SELU(),
+      torch.nn.MaxPool2d(kernel_size = 3, stride = 2),
+      # Output dims: (N, 32, 6, 6)
+      
+      # Conv3: 5x5
+      torch.nn.Conv2d(
+        in_channels = 32, 
+        out_channels = 64, kernel_size = 5, padding = 2), torch.nn.SELU(),
+      torch.nn.Conv2d(
+        in_channels = 64, out_channels = 64, kernel_size = 1), torch.nn.SELU(),
+      torch.nn.Conv2d(
+        in_channels = 64, out_channels = 64, kernel_size = 1), torch.nn.SELU(),
+      torch.nn.MaxPool2d(kernel_size = 3, stride = 1),
+      # Output dims: (N, 64, 4, 4)
+      
+      # Conv4: 3x3 (reduces channel size to n. of target classes)
+      torch.nn.Conv2d(
+        in_channels = 64, 
+        out_channels = 3, kernel_size = 3, padding = 2), torch.nn.SELU(),
+      torch.nn.Conv2d(
+        in_channels = 3, out_channels = 3, kernel_size = 1), torch.nn.SELU(),
+      torch.nn.Conv2d(
+        in_channels = 3, out_channels = 3, kernel_size = 1), torch.nn.SELU(),
+      torch.nn.MaxPool2d(kernel_size = 3, stride = 1),
+      # Output dims: (N, 3, 4, 4)
+      
+      # Global avg. pooling + flatten
       torch.nn.AdaptiveAvgPool2d(output_size = 1),
       torch.nn.Flatten()
-      # Output: (N, 3)
+      # Output dims: (N, 3)
     ) 
     
     # Loss function
@@ -102,6 +120,8 @@ class CNN(L.LightningModule):
     self.softmax = torch.nn.Softmax(dim = 1)
     
     # Initialize weights to conform with self-normalizing SELU activation
+    # Cannot use Lazy layers in model architecture because the layer shapes have to
+    # be determined before the weight initialization
     for layer in self.network:
       if isinstance(layer, torch.nn.Conv2d):
         torch.nn.init.kaiming_normal_(layer.weight, nonlinearity = "linear")
@@ -182,35 +202,47 @@ class OptunaPruning(PyTorchLightningPruningCallback, Callback):
 # x.shape
 # 
 # # NiN-like, 4 convolutional blocks, no dense layers
-# # Convolutions reduce dimensions from 28x28 to 2x2 (/14), increase channels from
+# # Convolutions reduce dimensions from 28x28 to 4x4, increase channels from
 # # 8 to 64 (8x).
 # network = torch.nn.Sequential(
-#   
+# 
 #   # Conv1
-#   torch.nn.Conv2d(in_channels = 8, out_channels = 16, kernel_size = 11, padding = 5), 
-#   torch.nn.SELU(),
-#   torch.nn.MaxPool2d(kernel_size = 3, padding = 1, stride = 2),
-#   
+#   torch.nn.Conv2d(
+#         in_channels = 8, out_channels = 16,
+#         kernel_size = 11, padding = 5), torch.nn.SELU(),
+#    torch.nn.LazyConv2d(out_channels = 16, kernel_size = 1), torch.nn.SELU(),
+#    torch.nn.LazyConv2d(out_channels = 16, kernel_size = 1), torch.nn.SELU(),
+#    torch.nn.MaxPool2d(kernel_size = 3, stride = 2),
+#   # Output dims: (N, 16, 13, 13)
+# 
 #   # Conv2
-#   torch.nn.Conv2d(in_channels = 16, out_channels = 32, kernel_size = 7, padding = 3),
-#   torch.nn.SELU(),
-#   torch.nn.MaxPool2d(kernel_size = 3, padding = 1, stride = 2),
+#   torch.nn.LazyConv2d(out_channels = 32, kernel_size = 7, padding = 3), torch.nn.SELU(),
+#   torch.nn.LazyConv2d(out_channels = 32, kernel_size = 1), torch.nn.SELU(),
+#   torch.nn.LazyConv2d(out_channels = 32, kernel_size = 1), torch.nn.SELU(),
+#   torch.nn.MaxPool2d(kernel_size = 3, stride = 2),
+#   # Output dims: (N, 32, 6, 6)
 # 
 #   # Conv3
-#   torch.nn.Conv2d(in_channels = 32, out_channels = 64, kernel_size = 5, padding = 2),
-#   torch.nn.SELU(),
-#   torch.nn.MaxPool2d(kernel_size = 3, padding = 1, stride = 2),
+#   torch.nn.LazyConv2d(out_channels = 64, kernel_size = 5, padding = 2), torch.nn.SELU(),
+#   torch.nn.LazyConv2d(out_channels = 64, kernel_size = 1), torch.nn.SELU(),
+#   torch.nn.LazyConv2d(out_channels = 64, kernel_size = 1), torch.nn.SELU(),
+#   torch.nn.MaxPool2d(kernel_size = 3, stride = 1),
+#   # Output dims: (N, 64, 4, 4)
 # 
-#   # Conv4
-#   torch.nn.Conv2d(in_channels = 64, out_channels = 3, kernel_size = 3, padding = 1),
-#   torch.nn.SELU(),
-#   torch.nn.MaxPool2d(kernel_size = 3, padding = 1, stride = 2),
+#   # Conv4 (reduces channel size to n. of target classes)
+#   torch.nn.LazyConv2d(out_channels = 3, kernel_size = 3, padding = 2), torch.nn.SELU(),
+#   torch.nn.LazyConv2d(out_channels = 3, kernel_size = 1), torch.nn.SELU(),
+#   torch.nn.LazyConv2d(out_channels = 3, kernel_size = 1), torch.nn.SELU(),
+#   torch.nn.MaxPool2d(kernel_size = 3, stride = 1),
+#   # Output dims: (N, 3, 4, 4)
 # 
-#   # # Global avg pooling + flatten, output of logits
-#   # torch.nn.AdaptiveAvgPool2d(1),
-#   # torch.nn.Flatten(),
-#   # # torch.nn.Softmax(dim = 1)
-# ) 
+#   # Global avg. pooling + flatten
+#   torch.nn.AdaptiveAvgPool2d(output_size = 1),
+#   #torch.nn.Flatten()
+#   # Output dims: (N, 3)
+# )
+# 
+# 
 # 
 # # Test run
 # network(x)

@@ -38,7 +38,7 @@ val_data = TrainDataset(x_val, y_val)
 
 # Create dataloaders
 tr_loader = torch.utils.data.DataLoader(
-  train_data, batch_size = 128, num_workers = 0, shuffle = True)
+  tr_data, batch_size = 128, num_workers = 0, shuffle = True)
 val_loader = torch.utils.data.DataLoader(
   val_data, batch_size = len(val_data), num_workers = 0, shuffle = False)
 
@@ -73,7 +73,6 @@ study_cnn = optuna.create_study(
   study_name = "tune_cnn",
   direction = "minimize"
 )
-
 
 # Instantiate objective
 obj = lambda trial: objective_cnn(trial, tr_loader, val_loader)
@@ -141,11 +140,11 @@ preds_cnn = classes[np.argmax(probs_cnn, axis = 1)]
 
 # Accuracy
 accuracy_score(classes[np.argmax(y_test, axis = 1)], preds_cnn) 
-# 0.6490384615384616
+# 0.6506410256410257
 
 # Log loss
 log_loss(y_test, probs_cnn) 
-# 0.685978013122983
+# 0.6747596099550004
 
 
 # Plot confusion matrix

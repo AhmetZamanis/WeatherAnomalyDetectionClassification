@@ -659,7 +659,8 @@ print(pd.DataFrame(probs_arsenal, columns = ["Ottawa", "Toronto", "Vancouver"]))
     [624 rows x 3 columns]
 
 A single `RocketClassifier` does not yield probabilistic predictions,
-but an `Arsenal` ensemble does.
+but an `Arsenal` ensemble does, even though they are derived from the
+average of 25 binary predictions.
 
 ### MUSE
 
@@ -790,15 +791,22 @@ into half, while roughly doubling the channel size.
     for a detailed breakdown of some modern CNN architectures, which
     were referenced while designing the network for this problem.
 
+  - The CNN used in this report mostly resembles the [Network in
+    Network](https://arxiv.org/abs/1312.4400) (NiN) architecture, which
+    avoids using dense layers at the end. Instead, there are two 1x1
+    convolutions after each “main” convolution layer. These induce local
+    non-linearities while avoiding large & computationally expensive
+    dense layers in the network.
+
 #### Data prep
 
 Below are the additional data preparation steps needed to train our CNN
-model with Lightning. One advantage of CNNs is relatively fewer number
-of hyperparameters to optimize. In this case, I only tuned the learning
-rate & learning rate decay with Optuna. Here we’ll load the best tune
-previously saved, [see
+model with Lightning. One advantage of CNNs over most other NNs is
+relatively fewer number of hyperparameters to optimize. In this case, I
+only tuned the learning rate & learning rate decay with Optuna. Here
+we’ll load the best tune previously saved, [see
 here](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/blob/main/ScriptsClassification/2.4_CNN.py)
-for the code used.
+for the code used for hyperparameter tuning.
 
 <details>
 <summary>Show code to prepare data for CNN training</summary>
@@ -880,17 +888,17 @@ print(pd.DataFrame(probs_cnn, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
     CNN classifier predicted probabilities for each city:
          Ottawa  Toronto  Vancouver
-    0    0.4494   0.5506     0.0001
-    1    0.5916   0.4082     0.0002
-    2    0.5497   0.4487     0.0016
-    3    0.6482   0.3122     0.0396
-    4    0.3470   0.5338     0.1192
+    0    0.4491   0.5261     0.0247
+    1    0.7688   0.2198     0.0113
+    2    0.6921   0.2930     0.0149
+    3    0.7281   0.2501     0.0218
+    4    0.6701   0.3141     0.0158
     ..      ...      ...        ...
-    619  0.0125   0.0239     0.9636
-    620  0.0007   0.0005     0.9989
-    621  0.0129   0.0085     0.9786
-    622  0.0013   0.0007     0.9980
-    623  0.0002   0.0002     0.9997
+    619  0.0002   0.0000     0.9998
+    620  0.0001   0.0000     0.9998
+    621  0.0005   0.0000     0.9995
+    622  0.0001   0.0000     0.9999
+    623  0.0000   0.0000     1.0000
 
     [624 rows x 3 columns]
 
@@ -943,7 +951,7 @@ print(pd.DataFrame(dict_metrics, index = [
     MultiRocket      0.6667   12.0146
     Arsenal          0.7452    0.8516
     MUSE             0.6074    1.1958
-    CNN              0.6522    0.6695
+    CNN              0.6554    0.7633
 
 We see the Arsenal method performs considerably better than the others
 in accuracy, and even a single MultiRocket + Ridge model comes second.
@@ -955,7 +963,7 @@ in accuracy, and even a single MultiRocket + Ridge model comes second.
   methods, and all methods are a huge improvement over random chance.
 
 When it comes to the quality of probability predictions, we have a
-different story, as CNN has the best log loss value by far, followed by
+different story, as CNN has the best log loss value, followed by
 Arsenal.
 
 - MUSE performs slightly worse in log loss compared to the random chance
@@ -1038,8 +1046,7 @@ for each class.
   another. Other models mostly confuse Ottawa & Toronto for one another,
   and not for Vancouver.
 
-- Arsenal has the best performance in identifying all cities. It is
-  closely followed by kNN in Vancouver and Ottawa, and CNN in Toronto.
+- Arsenal has the best performance in identifying all cities.
 
 ## Conclusion
 
@@ -1056,9 +1063,10 @@ classification, and the results are subjective.
   class prediction, so we can assess the uncertainty ourselves.
 
 - Still, the Arsenal ensemble also achieved a comparable log loss score,
-  which is very impressive for a fairly simple method. Also keep in mind
-  that we can combine a ROCKET transformation with any classifier in
-  theory, instead of just logistic regression.
+  which is very impressive considering the simple nature of its
+  probability predictions. Also keep in mind that we can combine a
+  ROCKET transformation with any classifier in theory, instead of just
+  logistic regression.
 
 - Personally, I believe in finding the simplest tool that solves a
   problem. In future time series classification problems, ROCKET

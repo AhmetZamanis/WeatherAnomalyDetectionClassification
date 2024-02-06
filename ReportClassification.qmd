@@ -417,7 +417,7 @@ print(pd.DataFrame(probs_arsenal, columns = ["Ottawa", "Toronto", "Vancouver"]))
 
 ```
 
-A single `RocketClassifier` does not yield probabilistic predictions, but an `Arsenal` ensemble does.
+A single `RocketClassifier` does not yield probabilistic predictions, but an `Arsenal` ensemble does, even though they are derived from the average of 25 binary predictions.
 
 ### MUSE
 
@@ -483,9 +483,11 @@ Our network inputs (one sequence, ignoring training batch size) are of shape `(8
 
     -   [See here](https://d2l.ai/chapter_convolutional-modern/index.html) for a detailed breakdown of some modern CNN architectures, which were referenced while designing the network for this problem.
 
+    -   The CNN used in this report mostly resembles the [Network in Network](https://arxiv.org/abs/1312.4400) (NiN) architecture, which avoids using dense layers at the end. Instead, there are two 1x1 convolutions after each "main" convolution layer. These induce local non-linearities while avoiding large & computationally expensive dense layers in the network.
+
 #### Data prep
 
-Below are the additional data preparation steps needed to train our CNN model with Lightning. One advantage of CNNs is relatively fewer number of hyperparameters to optimize. In this case, I only tuned the learning rate & learning rate decay with Optuna. Here we'll load the best tune previously saved, [see here](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/blob/main/ScriptsClassification/2.4_CNN.py) for the code used.
+Below are the additional data preparation steps needed to train our CNN model with Lightning. One advantage of CNNs over most other NNs is relatively fewer number of hyperparameters to optimize. In this case, I only tuned the learning rate & learning rate decay with Optuna. Here we'll load the best tune previously saved, [see here](https://github.com/AhmetZamanis/WeatherAnomalyDetectionClassification/blob/main/ScriptsClassification/2.4_CNN.py) for the code used for hyperparameter tuning.
 
 ```{python CNNDataPrep}
 #| code-fold: true
@@ -603,7 +605,7 @@ We see the Arsenal method performs considerably better than the others in accura
 
 -   MUSE takes last place in accuracy, though it's not far from the other methods, and all methods are a huge improvement over random chance.
 
-When it comes to the quality of probability predictions, we have a different story, as CNN has the best log loss value by far, followed by Arsenal.
+When it comes to the quality of probability predictions, we have a different story, as CNN has the best log loss value, followed by Arsenal.
 
 -   MUSE performs slightly worse in log loss compared to the random chance method.
 
@@ -667,7 +669,7 @@ Looking at horizontal rows will give us an idea of isolated performances for eac
 
 -   kNN often confuses Ottawa & Toronto for Vancouver, in addition to one another. Other models mostly confuse Ottawa & Toronto for one another, and not for Vancouver.
 
--   Arsenal has the best performance in identifying all cities. It is closely followed by kNN in Vancouver and Ottawa, and CNN in Toronto.
+-   Arsenal has the best performance in identifying all cities.
 
 ## Conclusion
 
@@ -677,7 +679,7 @@ We compared several different approaches to multivariate time series classificat
 
 -   The latter can be more important in many cases, especially when it comes to predicting inherently unstable phenomena like the weather. We may prefer a more realistic probability estimate over a simplified class prediction, so we can assess the uncertainty ourselves.
 
--   Still, the Arsenal ensemble also achieved a comparable log loss score, which is very impressive for a fairly simple method. Also keep in mind that we can combine a ROCKET transformation with any classifier in theory, instead of just logistic regression.
+-   Still, the Arsenal ensemble also achieved a comparable log loss score, which is very impressive considering the simple nature of its probability predictions. Also keep in mind that we can combine a ROCKET transformation with any classifier in theory, instead of just logistic regression.
 
 -   Personally, I believe in finding the simplest tool that solves a problem. In future time series classification problems, ROCKET variations will likely be my first choices.
 
